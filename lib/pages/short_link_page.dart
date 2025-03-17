@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'edit_page.dart';
+import 'permissions_page.dart';
 import 'statistics_page.dart';
 
 class ShortLinkPage extends StatefulWidget {
@@ -42,16 +44,16 @@ class _ShortLinkPageState extends State<ShortLinkPage> {
     });
   }
 
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       // appBar: AppBar(title: const Text("Short Link")),
-      body: [
-        StatisticsPage(linkId: widget.linkId),
-        EditPage(linkId: widget.linkId),
-        PermissionsPage(linkId: widget.linkId)
-      ][_selectedIndex],
+      body:
+          [
+            StatisticsPage(linkId: widget.linkId),
+            EditPage(linkId: widget.linkId),
+            PermissionsPage(linkId: widget.linkId),
+          ][_selectedIndex],
       bottomNavigationBar: NavigationBar(
         onDestinationSelected: (int index) {
           setState(() {
@@ -68,7 +70,7 @@ class _ShortLinkPageState extends State<ShortLinkPage> {
             icon: Icon(Icons.edit),
             label: "Редактирование",
           ),
-          NavigationDestination(icon: Icon(Icons.lock), label: "Права"),
+          NavigationDestination(icon: Icon(Icons.lock), label: "Доступ"),
         ],
         selectedIndex: _selectedIndex,
       ),
@@ -76,28 +78,3 @@ class _ShortLinkPageState extends State<ShortLinkPage> {
   }
 }
 
-class EditPage extends StatelessWidget {
-  final String linkId;
-  const EditPage({super.key, required this.linkId});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text("Редактирование")),
-      body: Center(child: Text("Редактирование $linkId")),
-    );
-  }
-}
-
-class PermissionsPage extends StatelessWidget {
-  final String linkId;
-  const PermissionsPage({super.key, required this.linkId});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text("Права доступа")),
-      body: Center(child: Text("Права для $linkId")),
-    );
-  }
-}
