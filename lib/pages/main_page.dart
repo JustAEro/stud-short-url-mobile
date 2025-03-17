@@ -3,6 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:intl/intl.dart';
 
+import 'short_link_page.dart';
+
 class MainPage extends StatefulWidget {
   const MainPage({super.key});
 
@@ -13,6 +15,7 @@ class MainPage extends StatefulWidget {
 class _MainPageState extends State<MainPage> {
   final List<Map<String, dynamic>> allShortLinks = [
     {
+      'id': '11',
       'description': 'Мой сайт',
       'shortKey': 'abc123',
       'longLink': 'https://example.com/my-site',
@@ -20,6 +23,7 @@ class _MainPageState extends State<MainPage> {
       'updatedAt': DateTime.now().subtract(Duration(hours: 1)),
     },
     {
+      'id': '22',
       'description': 'Блог1',
       'shortKey': 'xyz789',
       'longLink':
@@ -28,6 +32,7 @@ class _MainPageState extends State<MainPage> {
       'updatedAt': DateTime.now(),
     },
     {
+      'id': '33',
       'description': 'Блог2',
       'shortKey': 'xyz7893',
       'longLink': 'https://example.com/blog1',
@@ -35,6 +40,7 @@ class _MainPageState extends State<MainPage> {
       'updatedAt': DateTime.now(),
     },
     {
+      'id': '44',
       'description': 'Блог3',
       'shortKey': 'xyz7894',
       'longLink': 'https://example.com/blog2',
@@ -42,6 +48,7 @@ class _MainPageState extends State<MainPage> {
       'updatedAt': DateTime.now().subtract(Duration(days: 1)),
     },
     {
+      'id': '55',
       'description': 'Блог4',
       'shortKey': 'xyz7895',
       'longLink': 'https://example.com/blog3',
@@ -49,6 +56,7 @@ class _MainPageState extends State<MainPage> {
       'updatedAt': DateTime.now(),
     },
     {
+      'id': '66',
       'description': 'Блог5',
       'shortKey': 'xyz7896',
       'longLink': 'https://example.com/blog4',
@@ -56,6 +64,7 @@ class _MainPageState extends State<MainPage> {
       'updatedAt': DateTime.now(),
     },
     {
+      'id': '77',
       'description': 'Блог6',
       'shortKey': 'xyz7897',
       'longLink': 'https://example.com/blog5',
@@ -63,6 +72,7 @@ class _MainPageState extends State<MainPage> {
       'updatedAt': DateTime.now(),
     },
     {
+      'id': '88',
       'description': 'Блог7',
       'shortKey': 'xyz7898',
       'longLink': 'https://example.com/blog6',
@@ -70,6 +80,7 @@ class _MainPageState extends State<MainPage> {
       'updatedAt': DateTime.now(),
     },
     {
+      'id': '99',
       'description': 'Блог8',
       'shortKey': 'xyz7899',
       'longLink': 'https://example.com/blog7',
@@ -77,6 +88,7 @@ class _MainPageState extends State<MainPage> {
       'updatedAt': DateTime.now(),
     },
     {
+      'id': '1010',
       'description': 'Блог9',
       'shortKey': 'xyz7900',
       'longLink': 'https://example.com/blog8',
@@ -87,8 +99,8 @@ class _MainPageState extends State<MainPage> {
 
   List<Map<String, dynamic>> displayedLinks = [];
   String searchQuery = "";
-  String sortBy = "description";
-  bool ascending = true;
+  String sortBy = "updatedAt";
+  bool ascending = false;
 
   @override
   void initState() {
@@ -126,6 +138,13 @@ class _MainPageState extends State<MainPage> {
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri, mode: LaunchMode.inAppBrowserView);
     }
+  }
+
+   void openShortLinkPage(String linkId) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => ShortLinkPage(linkId: linkId)),
+    );
   }
 
   List<Map<String, dynamic>> getFilteredAndSortedLinks() {
@@ -207,19 +226,9 @@ class _MainPageState extends State<MainPage> {
                   value: sortBy,
                   items: const [
                     DropdownMenuItem(
-                      value: "description",
+                      value: "updatedAt",
                       child: Text(
-                        "Описание",
-                        style: TextStyle(
-                          fontWeight: FontWeight.normal,
-                          fontSize: 16, // Указываем размер шрифта
-                        ),
-                      ),
-                    ),
-                    DropdownMenuItem(
-                      value: "shortKey",
-                      child: Text(
-                        "Короткий ключ",
+                        "Дата изменения",
                         style: TextStyle(
                           fontWeight: FontWeight.normal,
                           fontSize: 16, // Указываем размер шрифта
@@ -230,6 +239,16 @@ class _MainPageState extends State<MainPage> {
                       value: "createdAt",
                       child: Text(
                         "Дата создания",
+                        style: TextStyle(
+                          fontWeight: FontWeight.normal,
+                          fontSize: 16, // Указываем размер шрифта
+                        ),
+                      ),
+                    ),
+                    DropdownMenuItem(
+                      value: "description",
+                      child: Text(
+                        "Описание",
                         style: TextStyle(
                           fontWeight: FontWeight.normal,
                           fontSize: 16, // Указываем размер шрифта
@@ -268,7 +287,7 @@ class _MainPageState extends State<MainPage> {
                     margin: const EdgeInsets.symmetric(vertical: 8.0),
                     child: ListTile(
                       title: GestureDetector(
-                        onTap: () {},
+                        onTap: () => openShortLinkPage(link['id']),
                         child: Text(link['description'] ?? link['shortKey']),
                       ),
                       subtitle: Column(
@@ -281,10 +300,7 @@ class _MainPageState extends State<MainPage> {
                                   onTap: () => openLink(shortUrl),
                                   child: Text(
                                     shortUrl,
-                                    style: const TextStyle(
-                                      color: Colors.blue,
-                                      decoration: TextDecoration.underline,
-                                    ),
+                                    style: const TextStyle(color: Colors.blue),
                                   ),
                                 ),
                               ),
@@ -312,10 +328,7 @@ class _MainPageState extends State<MainPage> {
                                       MediaQuery.of(context).size.width * 0.6,
                                   child: Text(
                                     link['longLink']!,
-                                    style: const TextStyle(
-                                      color: Colors.blue,
-                                      decoration: TextDecoration.underline,
-                                    ),
+                                    style: const TextStyle(color: Colors.blue),
                                     maxLines: 1, // Limit to 1 line
                                     overflow:
                                         TextOverflow
