@@ -63,7 +63,7 @@ class _EditPageState extends State<EditPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text("Редактирование короткой ссылки: ${widget.linkId}"),
+            // Text("Редактирование короткой ссылки: ${widget.linkId}"),
             const SizedBox(height: 16.0),
 
             Container(
