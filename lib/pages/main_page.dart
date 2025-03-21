@@ -136,7 +136,11 @@ class _MainPageState extends State<MainPage> {
   void openLink(String url) async {
     final Uri uri = Uri.parse(url);
     if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.inAppBrowserView);
+      try {
+        await launchUrl(uri, mode: LaunchMode.inAppBrowserView);
+      } catch (e) {
+        return;
+      }
     }
   }
 
