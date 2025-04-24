@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 
+import 'package:stud_short_url_mobile/services/auth_service.dart';
+
+import 'main_page.dart';
+
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
 
@@ -9,19 +13,40 @@ class LoginPage extends StatefulWidget {
 
 class _LoginPageState extends State<LoginPage> {
   final _formKey = GlobalKey<FormState>();
-  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _loginController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  bool _isLoading = false;
 
   bool _isPasswordVisible = false;
 
-  void _submitForm() {
-    if (_formKey.currentState!.validate()) {
-      final String email = _emailController.text;
-      final String password = _passwordController.text;
+  Future<void> _handleLogin() async {
+    if (!_formKey.currentState!.validate()) return;
 
-      print('Logging in user: $email, $password');
+    setState(() {
+      _isLoading = true;
+    });
 
-      // Здесь будет вызов метода для входа через сервис.
+    final success = await AuthService().login(
+      _loginController.text.trim(),
+      _passwordController.text,
+    );
+
+    setState(() {
+      _isLoading = false;
+    });
+
+    if (!mounted) return;
+
+    if (success) {
+      Navigator.of(
+        context,
+      ).pushReplacement(MaterialPageRoute(builder: (_) => const MainPage()));
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Ошибка входа. Неверный логин и/или пароль.'),
+        ),
+      );
     }
   }
 
@@ -53,7 +78,7 @@ class _LoginPageState extends State<LoginPage> {
                   child: Column(
                     children: [
                       TextFormField(
-                        controller: _emailController,
+                        controller: _loginController,
                         decoration: const InputDecoration(
                           labelText: 'Логин',
                           hintText: 'Введите ваш логин',
@@ -100,13 +125,15 @@ class _LoginPageState extends State<LoginPage> {
                         },
                       ),
                       const SizedBox(height: 24),
-                      ElevatedButton(
-                        onPressed: _submitForm,
-                        child: const Text(
-                          'Войти',
-                          style: TextStyle(color: Colors.blue),
-                        ),
-                      ),
+                      _isLoading
+                          ? const CircularProgressIndicator()
+                          : ElevatedButton(
+                            onPressed: _handleLogin,
+                            child: const Text(
+                              'Войти',
+                              style: TextStyle(color: Colors.blue),
+                            ),
+                          ),
                     ],
                   ),
                 ),

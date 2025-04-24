@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:stud_short_url_mobile/widgets/authenticated_app_bar.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:intl/intl.dart';
 
@@ -187,10 +188,7 @@ class _MainPageState extends State<MainPage> {
     DateFormat dateFormat = DateFormat('dd-MM-yyyy HH:mm:ss');
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Ваши короткие ссылки'),
-        centerTitle: true,
-      ),
+      appBar: const AuthenticatedAppBar(title: 'Ваши короткие ссылки'),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
 

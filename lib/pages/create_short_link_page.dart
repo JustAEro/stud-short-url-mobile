@@ -1,4 +1,11 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:http/http.dart' as http;
+import 'package:stud_short_url_mobile/services/auth_service.dart';
+import 'package:stud_short_url_mobile/widgets/authenticated_app_bar.dart';
+
+import 'short_link_page.dart';
 
 class CreateShortLinkPage extends StatefulWidget {
   const CreateShortLinkPage({super.key});
@@ -12,18 +19,75 @@ class _CreateShortLinkPageState extends State<CreateShortLinkPage> {
   final TextEditingController _longUrlController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
 
-  void _submitForm() {
+  Future<void> _submitForm() async {
     if (_formKey.currentState!.validate()) {
       final String longUrl = _longUrlController.text;
       final String description = _descriptionController.text;
 
-      print('Создана короткая ссылка для: $longUrl с описанием: $description');
+      final token = await AuthService().getToken();
+      if (token == null) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Ошибка: вы не авторизованы')),
+        );
+        return;
+      }
 
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Ссылка успешно создана!')));
+      final userInfo = await AuthService().getUserInfo();
+      if (userInfo == null) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Не удалось получить информацию о пользователе'),
+          ),
+        );
+        return;
+      }
 
-      Navigator.pop(context);
+      final url = Uri.parse('${dotenv.env['API_URL']}/api/v1/short-links');
+
+      try {
+        final response = await http.post(
+          url,
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer $token',
+          },
+          body: jsonEncode({
+            'login': userInfo['login'],
+            'longLink': longUrl,
+            'description': description,
+          }),
+        );
+
+        if (!mounted) return;
+
+        if (response.statusCode == 200 || response.statusCode == 201) {
+          final data = jsonDecode(response.body);
+          final String linkId = data['id'];
+
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ShortLinkPage(linkId: linkId),
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Ошибка при создании ссылки: ${response.statusCode} ${response.body}',
+              ),
+            ),
+          );
+        }
+      } catch (e) {
+        if (!mounted) return;
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Ошибка при создании ссылки: $e')),
+        );
+      }
     }
   }
 
@@ -36,13 +100,7 @@ class _CreateShortLinkPageState extends State<CreateShortLinkPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        centerTitle: true,
-        title: const Text(
-          'Создать короткую ссылку',
-          style: TextStyle(fontSize: 20),
-        ),
-      ),
+      appBar: const AuthenticatedAppBar(title: 'Создать короткую ссылку'),
 
       resizeToAvoidBottomInset: false,
 
