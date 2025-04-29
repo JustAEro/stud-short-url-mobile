@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:stud_short_url_mobile/services/auth_service.dart';
+
+import 'main_page.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -10,10 +12,12 @@ class RegisterPage extends StatefulWidget {
 
 class _RegisterPageState extends State<RegisterPage> {
   final _formKey = GlobalKey<FormState>();
-  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _loginController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _confirmPasswordController =
       TextEditingController();
+
+  final AuthService _authService = AuthService();
 
   bool _isPasswordVisible = false;
   bool _isConfirmPasswordVisible = false;
@@ -22,17 +26,38 @@ class _RegisterPageState extends State<RegisterPage> {
 
   Future<void> _register() async {
     if (!_formKey.currentState!.validate()) return;
-    setState(() => _isLoading = true);
 
-    // Имитация запроса к серверу
-    await Future.delayed(const Duration(seconds: 2));
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('auth_token', 'mock_token'); // Сохранение токена
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
 
-    setState(() => _isLoading = false);
+    final login = _loginController.text.trim();
+    final password = _passwordController.text.trim();
 
-    if (!mounted) return;
-    Navigator.pushReplacementNamed(context, '/');
+    try {
+      final isRegistered = await _authService.register(login, password);
+
+      if (isRegistered) {
+        final isLoggedIn = await _authService.login(login, password);
+
+        if (isLoggedIn) {
+          if (!mounted) return;
+          
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (_) => const MainPage()),
+          );
+        } else {
+          setState(() => _errorMessage = 'Не удалось войти после регистрации');
+        }
+      } else {
+        setState(() => _errorMessage = 'Регистрация не удалась');
+      }
+    } catch (e) {
+      setState(() => _errorMessage = 'Ошибка: $e');
+    } finally {
+      setState(() => _isLoading = false);
+    }
   }
 
   @override
@@ -52,7 +77,7 @@ class _RegisterPageState extends State<RegisterPage> {
                   child: Column(
                     children: [
                       TextFormField(
-                        controller: _emailController,
+                        controller: _loginController,
                         decoration: const InputDecoration(
                           labelText: 'Логин',
                           hintText: 'Введите ваш логин',
