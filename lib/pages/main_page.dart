@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:stud_short_url_mobile/services/auth_service.dart';
 import 'package:stud_short_url_mobile/widgets/authenticated_app_bar.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:intl/intl.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 
 import 'short_link_page.dart';
 
@@ -14,117 +18,57 @@ class MainPage extends StatefulWidget {
 }
 
 class _MainPageState extends State<MainPage> {
-  final List<Map<String, dynamic>> allShortLinks = [
-    {
-      'id': '11',
-      'description': 'Мой сайт',
-      'shortKey': 'abc123',
-      'longLink': 'https://example.com/my-site',
-      'createdAt': DateTime.now().subtract(Duration(days: 1)),
-      'updatedAt': DateTime.now().subtract(Duration(hours: 1)),
-    },
-    {
-      'id': '22',
-      'description': 'Блог1',
-      'shortKey': 'xyz789',
-      'longLink':
-          'https://www.google.com/search?q=sharedpreferences+vs+datastore&sca_esv=cb2bd471e7c0d922&sxsrf=AHTn8zpZUvM6V1AyaRQSbNTEw7qSlyaOvQ%3A1742158228685&ei=lDnXZ7K7KbWK9u8P3oTV2AU&oq=SharedPreferences+%D0%BC%D1%8B&gs_lp=Egxnd3Mtd2l6LXNlcnAiFlNoYXJlZFByZWZlcmVuY2VzINC80YsqAggAMgcQABiABBgNMgcQABiABBgNMgYQABgNGB4yBhAAGA0YHjIGEAAYDRgeMgYQABgNGB4yBhAAGA0YHjIGEAAYDRgeMgYQABgNGB4yBhAAGA0YHkjqEVCPB1iOC3ABeAGQAQCYAY8BoAHbAqoBAzEuMrgBAcgBAPgBAZgCBKAC9wLCAgoQABiwAxjWBBhHwgINEAAYgAQYsAMYQxiKBcICGRAuGIAEGLADGNEDGEMYxwEYyAMYigXYAQHCAgUQABiABMICChAAGIAEGEMYigXCAgUQIRigAZgDAIgGAZAGC7oGBAgBGAiSBwMxLjOgB8MR&sclient=gws-wiz-serp',
-      'createdAt': DateTime.now(),
-      'updatedAt': DateTime.now(),
-    },
-    {
-      'id': '33',
-      'description': 'Блог2',
-      'shortKey': 'xyz7893',
-      'longLink': 'https://example.com/blog1',
-      'createdAt': DateTime.now(),
-      'updatedAt': DateTime.now(),
-    },
-    {
-      'id': '44',
-      'description': 'Блог3',
-      'shortKey': 'xyz7894',
-      'longLink': 'https://example.com/blog2',
-      'createdAt': DateTime.now().subtract(Duration(days: 2)),
-      'updatedAt': DateTime.now().subtract(Duration(days: 1)),
-    },
-    {
-      'id': '55',
-      'description': 'Блог4',
-      'shortKey': 'xyz7895',
-      'longLink': 'https://example.com/blog3',
-      'createdAt': DateTime.now().subtract(Duration(days: 3)),
-      'updatedAt': DateTime.now(),
-    },
-    {
-      'id': '66',
-      'description': 'Блог5',
-      'shortKey': 'xyz7896',
-      'longLink': 'https://example.com/blog4',
-      'createdAt': DateTime.now().subtract(Duration(days: 4)),
-      'updatedAt': DateTime.now(),
-    },
-    {
-      'id': '77',
-      'description': 'Блог6',
-      'shortKey': 'xyz7897',
-      'longLink': 'https://example.com/blog5',
-      'createdAt': DateTime.now().subtract(Duration(days: 5)),
-      'updatedAt': DateTime.now(),
-    },
-    {
-      'id': '88',
-      'description': 'Блог7',
-      'shortKey': 'xyz7898',
-      'longLink': 'https://example.com/blog6',
-      'createdAt': DateTime.now().subtract(Duration(days: 6)),
-      'updatedAt': DateTime.now(),
-    },
-    {
-      'id': '99',
-      'description': 'Блог8',
-      'shortKey': 'xyz7899',
-      'longLink': 'https://example.com/blog7',
-      'createdAt': DateTime.now().subtract(Duration(days: 7)),
-      'updatedAt': DateTime.now(),
-    },
-    {
-      'id': '1010',
-      'description': 'Блог9',
-      'shortKey': 'xyz7900',
-      'longLink': 'https://example.com/blog8',
-      'createdAt': DateTime.now().subtract(Duration(days: 8)),
-      'updatedAt': DateTime.now(),
-    },
-  ];
-
-  List<Map<String, dynamic>> displayedLinks = [];
-  String searchQuery = "";
-  String sortBy = "updatedAt";
-  bool ascending = false;
+  List<Map<String, dynamic>> shortLinks = [];
+  bool loading = false;
+  String sortBy = 'updatedAt';
+  String sortDirection = 'desc';
+  String searchQuery = '';
+  int page = 1;
+  int limit = 5;
+  int totalPages = 1;
 
   @override
   void initState() {
     super.initState();
-    // Изначально отображаем 5 ссылок
-    displayedLinks = allShortLinks.take(5).toList();
+    loadShortLinks();
   }
 
-  void loadMoreLinks() {
+  Future<void> loadShortLinks() async {
     setState(() {
-      // Загружаем следующие 5 ссылок, если они есть
-      int nextIndex = displayedLinks.length;
-      if (nextIndex < allShortLinks.length) {
-        displayedLinks.addAll(
-          allShortLinks.getRange(
-            nextIndex,
-            nextIndex + 5 <= allShortLinks.length
-                ? nextIndex + 5
-                : allShortLinks.length,
-          ),
-        );
-      }
+      loading = true;
     });
+
+    try {
+      final token = await AuthService().getToken();
+
+      final response = await http.get(
+        Uri.parse(
+          '${dotenv.env['API_URL']}/api/v1/short-links?sortBy=$sortBy&sortDirection=$sortDirection&search=$searchQuery&page=$page&limit=$limit',
+        ),
+        headers: {'Authorization': 'Bearer $token'},
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        setState(() {
+          if (page == 1) {
+            shortLinks = List<Map<String, dynamic>>.from(data['data']);
+          } else {
+            shortLinks.addAll(List<Map<String, dynamic>>.from(data['data']));
+          }
+          totalPages = data['totalPages'];
+        });
+      } else {
+        print(response.body);
+        throw Exception('Failed to load short links');
+      }
+    } catch (e) {
+      print('Error loading short links: $e');
+    } finally {
+      setState(() {
+        loading = false;
+      });
+    }
   }
 
   void copyToClipboard(BuildContext context, String link) {
@@ -145,42 +89,11 @@ class _MainPageState extends State<MainPage> {
     }
   }
 
-   void openShortLinkPage(String linkId) {
+  void openShortLinkPage(String linkId) {
     Navigator.push(
       context,
       MaterialPageRoute(builder: (context) => ShortLinkPage(linkId: linkId)),
     );
-  }
-
-  List<Map<String, dynamic>> getFilteredAndSortedLinks() {
-    List<Map<String, dynamic>> filteredLinks =
-        displayedLinks
-            .where(
-              (link) =>
-                  link['description']!.toLowerCase().contains(
-                    searchQuery.toLowerCase(),
-                  ) ||
-                  link['shortKey']!.toLowerCase().contains(
-                    searchQuery.toLowerCase(),
-                  ),
-            )
-            .toList();
-
-    filteredLinks.sort((a, b) {
-      int comparison;
-      if (sortBy == "description") {
-        comparison = (a['description'] ?? a['shortKey']).compareTo(
-          b['description'] ?? b['shortKey'],
-        );
-      } else if (sortBy == "shortKey") {
-        comparison = a['shortKey'].compareTo(b['shortKey']);
-      } else {
-        comparison = a['createdAt'].compareTo(b['createdAt']);
-      }
-      return ascending ? comparison : -comparison;
-    });
-
-    return filteredLinks;
   }
 
   @override
@@ -211,7 +124,9 @@ class _MainPageState extends State<MainPage> {
               onChanged: (value) {
                 setState(() {
                   searchQuery = value;
+                  page = 1; // Сбросить страницу при новом поиске
                 });
+                loadShortLinks();
               },
             ),
             Row(
@@ -261,110 +176,150 @@ class _MainPageState extends State<MainPage> {
                   onChanged: (value) {
                     setState(() {
                       sortBy = value!;
+                      page = 1; // Сбросить страницу при изменении сортировки
                     });
+
+                    loadShortLinks();
                   },
                 ),
 
                 IconButton(
                   icon: Icon(
-                    ascending ? Icons.arrow_upward : Icons.arrow_downward,
+                    sortDirection == 'asc'
+                        ? Icons.arrow_upward
+                        : Icons.arrow_downward,
                   ),
                   onPressed: () {
                     setState(() {
-                      ascending = !ascending;
+                      sortDirection = sortDirection == 'asc' ? 'desc' : 'asc';
+                      page =
+                          1; // Сбросить страницу при изменении направления сортировки
                     });
+
+                    loadShortLinks();
                   },
                 ),
               ],
             ),
             const SizedBox(height: 16),
             Expanded(
-              child: ListView.builder(
-                shrinkWrap: true,
-                itemCount: getFilteredAndSortedLinks().length,
-                itemBuilder: (context, index) {
-                  final link = getFilteredAndSortedLinks()[index];
-                  final shortUrl = 'https://short.ly/${link['shortKey']}';
-                  return Card(
-                    margin: const EdgeInsets.symmetric(vertical: 8.0),
-                    child: ListTile(
-                      title: GestureDetector(
-                        onTap: () => openShortLinkPage(link['id']),
-                        child: Text(link['description'] ?? link['shortKey']),
-                      ),
-                      subtitle: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Expanded(
-                                child: GestureDetector(
-                                  onTap: () => openLink(shortUrl),
-                                  child: Text(
-                                    shortUrl,
-                                    style: const TextStyle(color: Colors.blue),
+              child: RefreshIndicator(
+                child: ListView.builder(
+                  shrinkWrap: true,
+                  itemCount: shortLinks.length,
+                  itemBuilder: (context, index) {
+                    final link = shortLinks[index];
+                    
+                    final shortUrl = '${dotenv.env['SHORT_LINKS_WEB_APP_URL']}/${link['shortKey']}';
+
+                    return Card(
+                      margin: const EdgeInsets.symmetric(vertical: 8.0),
+                      child: ListTile(
+                        title: GestureDetector(
+                          onTap: () => openShortLinkPage(link['id']),
+                          child: Text(
+                            link['description'].toString().isNotEmpty
+                                ? link['description']
+                                : link['shortKey'],
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w400,
+                              fontSize: 16, // Указываем размер шрифта
+                            ),
+                          ),
+                        ),
+                        subtitle: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: GestureDetector(
+                                    onTap: () => openLink(shortUrl),
+                                    child: Text(
+                                      shortUrl,
+                                      style: const TextStyle(
+                                        color: Colors.blue,
+                                      ),
+                                    ),
                                   ),
                                 ),
-                              ),
-                              Column(
-                                mainAxisAlignment:
-                                    MainAxisAlignment
-                                        .center, // Center vertically
-                                children: [
-                                  IconButton(
-                                    icon: const Icon(Icons.copy),
-                                    onPressed:
-                                        () =>
-                                            copyToClipboard(context, shortUrl),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                          GestureDetector(
-                            onTap: () => openLink(link['longLink']!),
-                            child: Row(
-                              children: [
-                                SizedBox(
-                                  width:
-                                      MediaQuery.of(context).size.width * 0.6,
-                                  child: Text(
-                                    link['longLink']!,
-                                    style: const TextStyle(color: Colors.blue),
-                                    maxLines: 1, // Limit to 1 line
-                                    overflow:
-                                        TextOverflow
-                                            .ellipsis, // Add ellipsis if text overflows
-                                  ),
+                                Column(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment
+                                          .center, // Center vertically
+                                  children: [
+                                    IconButton(
+                                      icon: const Icon(Icons.copy),
+                                      onPressed:
+                                          () => copyToClipboard(
+                                            context,
+                                            shortUrl,
+                                          ),
+                                    ),
+                                  ],
                                 ),
                               ],
                             ),
-                          ),
-                          const SizedBox(height: 10),
-                          Text(
-                            "Дата создания: ${dateFormat.format(link['createdAt'])}",
-                            style: const TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey,
+                            GestureDetector(
+                              onTap: () => openLink(link['longLink']!),
+                              child: Row(
+                                children: [
+                                  SizedBox(
+                                    width:
+                                        MediaQuery.of(context).size.width * 0.6,
+                                    child: Text(
+                                      link['longLink']!,
+                                      style: const TextStyle(
+                                        color: Colors.blue,
+                                      ),
+                                      maxLines: 1, // Limit to 1 line
+                                      overflow:
+                                          TextOverflow
+                                              .ellipsis, // Add ellipsis if text overflows
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
-                          ),
-                          Text(
-                            "Дата изменения: ${dateFormat.format(link['updatedAt'])}",
-                            style: const TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey,
+                            const SizedBox(height: 10),
+                            Text(
+                              "Дата создания: ${dateFormat.format(DateTime.parse(link['createdAt']).toLocal())}",
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey,
+                              ),
                             ),
-                          ),
-                        ],
+                            Text(
+                              "Дата изменения: ${dateFormat.format(DateTime.parse(link['updatedAt']).toLocal())}",
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                  );
+                    );
+                  },
+                ),
+                onRefresh: () async {
+                  setState(() {
+                    page = 1; // Сбросить страницу при обновлении
+                  });
+
+                  await loadShortLinks();
                 },
               ),
             ),
-            if (displayedLinks.length < allShortLinks.length)
+            if (page < totalPages)
               ElevatedButton(
-                onPressed: loadMoreLinks,
+                onPressed: () {
+                  setState(() {
+                    page++;
+                  });
+
+                  loadShortLinks();
+                },
                 child: const Text(
                   'Загрузить ещё',
                   style: TextStyle(color: Colors.blue),
