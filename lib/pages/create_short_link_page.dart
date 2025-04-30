@@ -65,11 +65,12 @@ class _CreateShortLinkPageState extends State<CreateShortLinkPage> {
         if (response.statusCode == 200 || response.statusCode == 201) {
           final data = jsonDecode(response.body);
           final String linkId = data['id'];
+          final String shortKey = data['shortKey'];
 
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
-              builder: (context) => ShortLinkPage(linkId: linkId),
+              builder: (context) => ShortLinkPage(linkId: linkId, shortKey: shortKey,),
             ),
           );
         } else {

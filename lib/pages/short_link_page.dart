@@ -6,8 +6,9 @@ import 'statistics_page.dart';
 
 class ShortLinkPage extends StatefulWidget {
   final String linkId;
+  final String shortKey;
 
-  const ShortLinkPage({super.key, required this.linkId});
+  const ShortLinkPage({super.key, required this.linkId, required this.shortKey});
 
   @override
   State<ShortLinkPage> createState() => _ShortLinkPageState();
@@ -50,8 +51,8 @@ class _ShortLinkPageState extends State<ShortLinkPage> {
       // appBar: AppBar(title: const Text("Short Link")),
       body:
           [
-            StatisticsPage(linkId: widget.linkId),
-            EditPage(linkId: widget.linkId),
+            StatisticsPage(linkId: widget.linkId, shortKey: widget.shortKey),
+            EditPage(linkId: widget.linkId, shortKey: widget.shortKey),
             PermissionsPage(linkId: widget.linkId),
           ][_selectedIndex],
       bottomNavigationBar: NavigationBar(

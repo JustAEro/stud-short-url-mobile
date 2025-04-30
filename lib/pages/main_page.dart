@@ -89,10 +89,10 @@ class _MainPageState extends State<MainPage> {
     }
   }
 
-  void openShortLinkPage(String linkId) {
+  void openShortLinkPage(String linkId, String shortKey) {
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => ShortLinkPage(linkId: linkId)),
+      MaterialPageRoute(builder: (context) => ShortLinkPage(linkId: linkId, shortKey: shortKey)),
     );
   }
 
@@ -209,14 +209,14 @@ class _MainPageState extends State<MainPage> {
                   itemCount: shortLinks.length,
                   itemBuilder: (context, index) {
                     final link = shortLinks[index];
-                    
+
                     final shortUrl = '${dotenv.env['SHORT_LINKS_WEB_APP_URL']}/${link['shortKey']}';
 
                     return Card(
                       margin: const EdgeInsets.symmetric(vertical: 8.0),
                       child: ListTile(
                         title: GestureDetector(
-                          onTap: () => openShortLinkPage(link['id']),
+                          onTap: () => openShortLinkPage(link['id'], link['shortKey']),
                           child: Text(
                             link['description'].toString().isNotEmpty
                                 ? link['description']
