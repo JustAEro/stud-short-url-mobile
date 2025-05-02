@@ -7,6 +7,7 @@ import 'package:stud_short_url_mobile/services/auth_service.dart';
 
 import 'edit_page.dart';
 import 'permissions_page.dart';
+import 'share_short_link_page.dart';
 import 'statistics_page.dart';
 
 class ShortLinkPage extends StatefulWidget {
@@ -97,6 +98,7 @@ class _ShortLinkPageState extends State<ShortLinkPage> {
             EditPage(linkId: widget.linkId, shortKey: widget.shortKey),
             if (isOwner)
               PermissionsPage(linkId: widget.linkId, isOwner: isOwner),
+            ShareShortLinkPage(shortKey: widget.shortKey),
           ][_selectedIndex],
       bottomNavigationBar: NavigationBar(
         onDestinationSelected: (int index) {
@@ -112,10 +114,11 @@ class _ShortLinkPageState extends State<ShortLinkPage> {
           ),
           NavigationDestination(
             icon: Icon(Icons.edit),
-            label: "Редактирование",
+            label: "Изменение",
           ),
           if (isOwner)
             NavigationDestination(icon: Icon(Icons.lock), label: "Доступ"),
+          NavigationDestination(icon: Icon(Icons.share), label: "Поделиться"),
         ],
         selectedIndex: _selectedIndex,
       ),
