@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
+import 'package:stud_short_url_mobile/link-access-roles/link_access_roles.dart';
 import 'package:stud_short_url_mobile/services/auth_service.dart';
 
 import 'edit_page.dart';
@@ -88,7 +89,9 @@ class _ShortLinkPageState extends State<ShortLinkPage> {
       );
     }
 
-    final bool isOwner = shortLinkData?['isOwner'] ?? false;
+    final AccessRole? role = parseRole(shortLinkData?['role']);
+    final bool canEdit = role == AccessRole.editor || role == AccessRole.admin;
+    final bool canManagePermissions = role == AccessRole.admin;
 
     return Scaffold(
       // appBar: AppBar(title: const Text("Short Link")),
@@ -96,8 +99,11 @@ class _ShortLinkPageState extends State<ShortLinkPage> {
           [
             StatisticsPage(linkId: widget.linkId, shortKey: widget.shortKey),
             EditPage(linkId: widget.linkId, shortKey: widget.shortKey),
-            if (isOwner)
-              PermissionsPage(linkId: widget.linkId, isOwner: isOwner),
+            if (canManagePermissions)
+              PermissionsPage(
+                linkId: widget.linkId,
+                canManagePermissions: canManagePermissions,
+              ),
             ShareShortLinkPage(shortKey: widget.shortKey),
           ][_selectedIndex],
       bottomNavigationBar: NavigationBar(
@@ -112,11 +118,11 @@ class _ShortLinkPageState extends State<ShortLinkPage> {
             icon: Icon(Icons.bar_chart),
             label: "Статистика",
           ),
-          NavigationDestination(
-            icon: Icon(Icons.edit),
-            label: "Изменение",
-          ),
-          if (isOwner)
+          if (canEdit)
+            NavigationDestination(icon: Icon(Icons.edit), label: "Изменение")
+          else
+            NavigationDestination(icon: Icon(Icons.info), label: "Информация"),
+          if (canManagePermissions)
             NavigationDestination(icon: Icon(Icons.lock), label: "Доступ"),
           NavigationDestination(icon: Icon(Icons.share), label: "Поделиться"),
         ],

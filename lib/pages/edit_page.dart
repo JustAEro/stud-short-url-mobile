@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:intl/intl.dart';
+import 'package:stud_short_url_mobile/link-access-roles/link_access_roles.dart';
 import 'package:stud_short_url_mobile/services/auth_service.dart';
 
 class EditPage extends StatefulWidget {
@@ -18,7 +19,7 @@ class EditPage extends StatefulWidget {
 class _EditPageState extends State<EditPage> {
   final TextEditingController _urlController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
-  bool isOwner = false;
+  AccessRole? role;
   String creatorLogin = '';
   String createdAt = '';
   String updatedAt = '';
@@ -55,9 +56,13 @@ class _EditPageState extends State<EditPage> {
           _urlController.text = data['longLink'];
           _descriptionController.text = data['description'] ?? '';
           creatorLogin = data['user']['login'];
-          createdAt = dateFormat.format(DateTime.parse(data['createdAt']).toLocal());
-          updatedAt = dateFormat.format(DateTime.parse(data['updatedAt']).toLocal());
-          isOwner = data['isOwner'];
+          createdAt = dateFormat.format(
+            DateTime.parse(data['createdAt']).toLocal(),
+          );
+          updatedAt = dateFormat.format(
+            DateTime.parse(data['updatedAt']).toLocal(),
+          );
+          role = parseRole(data['role']);
         });
       } else {
         if (!mounted) return;
@@ -106,7 +111,9 @@ class _EditPageState extends State<EditPage> {
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         setState(() {
-          updatedAt = dateFormat.format(DateTime.parse(data['updatedAt']).toLocal());
+          updatedAt = dateFormat.format(
+            DateTime.parse(data['updatedAt']).toLocal(),
+          );
           _urlController.text = data['longLink'];
           _descriptionController.text = data['description'] ?? '';
         });
@@ -163,10 +170,20 @@ class _EditPageState extends State<EditPage> {
     }
   }
 
+  bool get canEdit => role == AccessRole.editor || role == AccessRole.admin;
+  bool get canDelete => role == AccessRole.admin;
+
+  String get roleText => switch (role) {
+    AccessRole.viewer => 'Просмотр',
+    AccessRole.editor => 'Редактирование',
+    AccessRole.admin => 'Администрирование',
+    null => 'Неизвестно',
+  };
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Редактирование")),
+      appBar: AppBar(title: Text(canEdit ? "Редактирование" : "Просмотр")),
       body:
           _isLoading
               ? const Center(child: CircularProgressIndicator())
@@ -202,6 +219,12 @@ class _EditPageState extends State<EditPage> {
                           Text(creatorLogin),
 
                           const Text(
+                            "Режим доступа:",
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          Text(roleText),
+
+                          const Text(
                             "Дата создания:",
                             style: TextStyle(fontWeight: FontWeight.bold),
                           ),
@@ -219,6 +242,7 @@ class _EditPageState extends State<EditPage> {
                     const SizedBox(height: 16.0),
                     TextField(
                       controller: _urlController,
+                      readOnly: !canEdit,
                       decoration: const InputDecoration(
                         labelText: "Целевая ссылка",
                         border: OutlineInputBorder(),
@@ -227,6 +251,7 @@ class _EditPageState extends State<EditPage> {
                     const SizedBox(height: 16.0),
                     TextField(
                       controller: _descriptionController,
+                      readOnly: !canEdit,
                       decoration: const InputDecoration(
                         labelText: "Описание (опционально)",
                         border: OutlineInputBorder(),
@@ -236,14 +261,15 @@ class _EditPageState extends State<EditPage> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        ElevatedButton(
-                          onPressed: _updateLink,
-                          child: const Text(
-                            "Обновить",
-                            style: TextStyle(color: Colors.blue),
+                        if (canEdit)
+                          ElevatedButton(
+                            onPressed: _updateLink,
+                            child: const Text(
+                              "Обновить",
+                              style: TextStyle(color: Colors.blue),
+                            ),
                           ),
-                        ),
-                        if (isOwner)
+                        if (canDelete)
                           ElevatedButton(
                             onPressed: _deleteLink,
                             style: ElevatedButton.styleFrom(

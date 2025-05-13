@@ -8,7 +8,7 @@ class ShortLinkWithPermissionsDto {
   final DateTime createdAt;
   final DateTime updatedAt;
   final String description;
-  final bool isOwner;
+  final String role;
   final bool canEdit;
   final UserDto user;
 
@@ -20,7 +20,7 @@ class ShortLinkWithPermissionsDto {
     required this.createdAt,
     required this.updatedAt,
     required this.description,
-    required this.isOwner,
+    required this.role,
     required this.canEdit,
     required this.user,
   });
