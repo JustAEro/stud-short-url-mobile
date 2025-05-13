@@ -2,40 +2,85 @@ import 'package:flutter/material.dart';
 import 'package:stud_short_url_mobile/services/auth_service.dart';
 import 'package:stud_short_url_mobile/pages/login_page.dart';
 
-class AuthenticatedAppBar extends StatelessWidget implements PreferredSizeWidget {
+class AuthenticatedAppBar extends StatefulWidget
+    implements PreferredSizeWidget {
   final String title;
 
   const AuthenticatedAppBar({super.key, required this.title});
 
   @override
+  State<AuthenticatedAppBar> createState() => _AuthenticatedAppBarState();
+
+  @override
+  Size get preferredSize => const Size.fromHeight(kToolbarHeight);
+}
+
+class _AuthenticatedAppBarState extends State<AuthenticatedAppBar> {
+  String? userLogin;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserLogin();
+  }
+
+  Future<void> _loadUserLogin() async {
+    final userInfo = await AuthService().getUserInfo();
+    setState(() {
+      userLogin = userInfo!['login'];
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     return AppBar(
       centerTitle: true,
-      title: Text(title),
+      title: Text(widget.title),
       actions: [
-        PopupMenuButton<String>(
-          onSelected: (value) async {
-            if (value == 'logout') {
-              await AuthService().logout();
-              if (context.mounted) {
-                Navigator.of(context).pushAndRemoveUntil(
-                  MaterialPageRoute(builder: (_) => const LoginPage()),
-                  (route) => false,
-                );
+        Padding(
+          padding: const EdgeInsets.only(right: 0.0),
+          child: PopupMenuButton<String>(
+            icon: const Icon(Icons.person),
+            offset: const Offset(0, kToolbarHeight),
+            onSelected: (value) async {
+              if (value == 'logout') {
+                await AuthService().logout();
+                if (context.mounted) {
+                  Navigator.of(context).pushAndRemoveUntil(
+                    MaterialPageRoute(builder: (_) => const LoginPage()),
+                    (route) => false,
+                  );
+                }
               }
-            }
-          },
-          itemBuilder: (context) => [
-            const PopupMenuItem<String>(
-              value: 'logout',
-              child: Text('Выйти'),
-            ),
-          ],
+            },
+            itemBuilder:
+                (context) => [
+                  PopupMenuItem<String>(
+                    enabled: false,
+                    child: SelectableText(
+                      userLogin ?? '...',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black87,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ),
+                  const PopupMenuDivider(),
+                  const PopupMenuItem<String>(
+                    value: 'logout',
+                    child: Text(
+                      'Выйти',
+                      style: TextStyle(
+                        color: Colors.red,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ],
+          ),
         ),
       ],
     );
   }
-
-  @override
-  Size get preferredSize => const Size.fromHeight(kToolbarHeight);
 }

@@ -5,6 +5,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:intl/intl.dart';
 import 'package:stud_short_url_mobile/link-access-roles/link_access_roles.dart';
 import 'package:stud_short_url_mobile/services/auth_service.dart';
+import 'package:stud_short_url_mobile/widgets/authenticated_app_bar.dart';
 
 class EditPage extends StatefulWidget {
   final String linkId;
@@ -183,7 +184,7 @@ class _EditPageState extends State<EditPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(canEdit ? "Редактирование" : "Просмотр")),
+      appBar: AuthenticatedAppBar(title: canEdit ? "Редактирование" : "Просмотр"),
       body:
           _isLoading
               ? const Center(child: CircularProgressIndicator())

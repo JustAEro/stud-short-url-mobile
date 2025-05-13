@@ -7,6 +7,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:stud_short_url_mobile/widgets/authenticated_app_bar.dart';
 
 class ShareShortLinkPage extends StatefulWidget {
   final String shortKey;
@@ -41,9 +42,7 @@ class _ShareShortLinkPageState extends State<ShareShortLinkPage> {
       final file = await File('${tempDir.path}/qr_code.png').create();
       await file.writeAsBytes(pngBytes);
 
-      await Share.shareXFiles([
-        XFile(file.path),
-      ], text: shortUrl);
+      await Share.shareXFiles([XFile(file.path)], text: shortUrl);
     } catch (e) {
       debugPrint("Ошибка при создании QR-кода: $e");
     }
@@ -73,10 +72,7 @@ class _ShareShortLinkPageState extends State<ShareShortLinkPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Поделиться ссылкой"),
-        centerTitle: true,
-      ),
+      appBar: const AuthenticatedAppBar(title: 'Поделиться ссылкой'),
       body: SafeArea(
         child: Center(
           child: Padding(

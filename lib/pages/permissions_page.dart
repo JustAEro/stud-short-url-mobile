@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'package:stud_short_url_mobile/services/auth_service.dart';
+import 'package:stud_short_url_mobile/widgets/authenticated_app_bar.dart';
 
 class PermissionsPage extends StatefulWidget {
   final String linkId;
@@ -221,7 +222,7 @@ class _PermissionsPageState extends State<PermissionsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Права доступа")),
+      appBar: const AuthenticatedAppBar(title: "Права доступа"),
       body:
           _isLoading
               ? const Center(child: CircularProgressIndicator())
@@ -263,9 +264,7 @@ class _PermissionsPageState extends State<PermissionsPage> {
                                             return DropdownMenuItem<String>(
                                               value: role,
                                               child: Row(
-                                                children: [
-                                                  getRoleIcon(role),
-                                                ],
+                                                children: [getRoleIcon(role)],
                                               ),
                                             );
                                           }).toList(),

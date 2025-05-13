@@ -36,13 +36,13 @@ class AuthService {
   }
 
   Future<void> logout() async {
-    final token = await getToken();
-    if (token == null) return;
+    // final token = await getToken();
+    // if (token == null) return;
 
-    await http.post(
-      Uri.parse('$baseUrl/logout'),
-      headers: {'Authorization': 'Bearer $token'},
-    );
+    // await http.post(
+    //   Uri.parse('$baseUrl/logout'),
+    //   headers: {'Authorization': 'Bearer $token'},
+    // );
 
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(tokenKey);

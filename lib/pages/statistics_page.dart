@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 
 import 'package:stud_short_url_mobile/services/auth_service.dart';
+import 'package:stud_short_url_mobile/widgets/authenticated_app_bar.dart';
 
 class StatisticsPage extends StatefulWidget {
   final String linkId;
@@ -89,7 +90,7 @@ class _StatisticsPageState extends State<StatisticsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Статистика")),
+      appBar: const AuthenticatedAppBar(title: 'Статистика'),
       body:
           _isLoading
               ? const Center(child: CircularProgressIndicator())
