@@ -27,10 +27,18 @@ class _MainPageState extends State<MainPage> {
   int limit = 5;
   int totalPages = 1;
 
+  final ScrollController _scrollController = ScrollController();
+
   @override
   void initState() {
     super.initState();
     loadShortLinks();
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
   }
 
   Future<void> loadShortLinks() async {
@@ -92,7 +100,9 @@ class _MainPageState extends State<MainPage> {
   void openShortLinkPage(String linkId, String shortKey) {
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => ShortLinkPage(linkId: linkId, shortKey: shortKey)),
+      MaterialPageRoute(
+        builder: (context) => ShortLinkPage(linkId: linkId, shortKey: shortKey),
+      ),
     );
   }
 
@@ -204,104 +214,144 @@ class _MainPageState extends State<MainPage> {
             const SizedBox(height: 16),
             Expanded(
               child: RefreshIndicator(
-                child: ListView.builder(
-                  shrinkWrap: true,
-                  itemCount: shortLinks.length,
-                  itemBuilder: (context, index) {
-                    final link = shortLinks[index];
+                child: Scrollbar(
+                  controller: _scrollController,
+                  thumbVisibility: true,
+                  child: ListView.builder(
+                    controller: _scrollController,
+                    shrinkWrap: true,
+                    itemCount: shortLinks.length + 1,
+                    itemBuilder: (context, index) {
+                      if (index == shortLinks.length) {
+                        if (page < totalPages) {
+                          return Padding(
+                            padding: const EdgeInsets.only(top: 16.0),
+                            child: Center(
+                              child: SizedBox(
+                                width:
+                                    200, // Фиксированная ширина как у кнопки создания
+                                child: ElevatedButton(
+                                  onPressed: () {
+                                    setState(() {
+                                      page++;
+                                    });
+                                    loadShortLinks();
+                                  },
+                                  child: const Text(
+                                    'Загрузить ещё',
+                                    style: TextStyle(color: Colors.blue),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          );
+                        } else {
+                          return const SizedBox.shrink(); // или пустое место, если больше страниц нет
+                        }
+                      }
 
-                    final shortUrl = '${dotenv.env['SHORT_LINKS_WEB_APP_URL']}/${link['shortKey']}';
+                      final link = shortLinks[index];
 
-                    return Card(
-                      margin: const EdgeInsets.symmetric(vertical: 8.0),
-                      child: ListTile(
-                        title: GestureDetector(
-                          onTap: () => openShortLinkPage(link['id'], link['shortKey']),
-                          child: Text(
-                            link['description'].toString().isNotEmpty
-                                ? link['description']
-                                : link['shortKey'],
-                            style: const TextStyle(
-                              fontWeight: FontWeight.w400,
-                              fontSize: 16, // Указываем размер шрифта
+                      final shortUrl =
+                          '${dotenv.env['SHORT_LINKS_WEB_APP_URL']}/${link['shortKey']}';
+
+                      return Card(
+                        margin: const EdgeInsets.symmetric(vertical: 8.0),
+                        child: ListTile(
+                          title: GestureDetector(
+                            onTap:
+                                () => openShortLinkPage(
+                                  link['id'],
+                                  link['shortKey'],
+                                ),
+                            child: Text(
+                              link['description'].toString().isNotEmpty
+                                  ? link['description']
+                                  : link['shortKey'],
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w400,
+                                fontSize: 16, // Указываем размер шрифта
+                              ),
                             ),
                           ),
-                        ),
-                        subtitle: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: GestureDetector(
-                                    onTap: () => openLink(shortUrl),
-                                    child: Text(
-                                      shortUrl,
-                                      style: const TextStyle(
-                                        color: Colors.blue,
+                          subtitle: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: GestureDetector(
+                                      onTap: () => openLink(shortUrl),
+                                      child: Text(
+                                        shortUrl,
+                                        style: const TextStyle(
+                                          color: Colors.blue,
+                                        ),
                                       ),
                                     ),
                                   ),
-                                ),
-                                Column(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment
-                                          .center, // Center vertically
-                                  children: [
-                                    IconButton(
-                                      icon: const Icon(Icons.copy),
-                                      onPressed:
-                                          () => copyToClipboard(
-                                            context,
-                                            shortUrl,
-                                          ),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                            GestureDetector(
-                              onTap: () => openLink(link['longLink']!),
-                              child: Row(
-                                children: [
-                                  SizedBox(
-                                    width:
-                                        MediaQuery.of(context).size.width * 0.6,
-                                    child: Text(
-                                      link['longLink']!,
-                                      style: const TextStyle(
-                                        color: Colors.blue,
+                                  Column(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment
+                                            .center, // Center vertically
+                                    children: [
+                                      IconButton(
+                                        icon: const Icon(Icons.copy),
+                                        onPressed:
+                                            () => copyToClipboard(
+                                              context,
+                                              shortUrl,
+                                            ),
                                       ),
-                                      maxLines: 1, // Limit to 1 line
-                                      overflow:
-                                          TextOverflow
-                                              .ellipsis, // Add ellipsis if text overflows
-                                    ),
+                                    ],
                                   ),
                                 ],
                               ),
-                            ),
-                            const SizedBox(height: 10),
-                            Text(
-                              "Дата создания: ${dateFormat.format(DateTime.parse(link['createdAt']).toLocal())}",
-                              style: const TextStyle(
-                                fontSize: 12,
-                                color: Colors.grey,
+                              GestureDetector(
+                                onTap: () => openLink(link['longLink']!),
+                                child: Row(
+                                  children: [
+                                    SizedBox(
+                                      width:
+                                          MediaQuery.of(context).size.width *
+                                          0.6,
+                                      child: Text(
+                                        link['longLink']!,
+                                        style: const TextStyle(
+                                          color: Colors.blue,
+                                        ),
+                                        maxLines: 1, // Limit to 1 line
+                                        overflow:
+                                            TextOverflow
+                                                .ellipsis, // Add ellipsis if text overflows
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
-                            ),
-                            Text(
-                              "Дата изменения: ${dateFormat.format(DateTime.parse(link['updatedAt']).toLocal())}",
-                              style: const TextStyle(
-                                fontSize: 12,
-                                color: Colors.grey,
+                              const SizedBox(height: 10),
+                              Text(
+                                "Дата создания: ${dateFormat.format(DateTime.parse(link['createdAt']).toLocal())}",
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey,
+                                ),
                               ),
-                            ),
-                          ],
+                              Text(
+                                "Дата изменения: ${dateFormat.format(DateTime.parse(link['updatedAt']).toLocal())}",
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
-                    );
-                  },
+                      );
+                    },
+                  ),
                 ),
+
                 onRefresh: () async {
                   setState(() {
                     page = 1; // Сбросить страницу при обновлении
@@ -311,20 +361,6 @@ class _MainPageState extends State<MainPage> {
                 },
               ),
             ),
-            if (page < totalPages)
-              ElevatedButton(
-                onPressed: () {
-                  setState(() {
-                    page++;
-                  });
-
-                  loadShortLinks();
-                },
-                child: const Text(
-                  'Загрузить ещё',
-                  style: TextStyle(color: Colors.blue),
-                ),
-              ),
           ],
         ),
       ),
