@@ -6,7 +6,13 @@ class AuthenticatedAppBar extends StatefulWidget
     implements PreferredSizeWidget {
   final String title;
 
-  const AuthenticatedAppBar({super.key, required this.title});
+  final bool showReportsButton;
+
+  const AuthenticatedAppBar({
+    super.key,
+    required this.title,
+    this.showReportsButton = false,
+  });
 
   @override
   State<AuthenticatedAppBar> createState() => _AuthenticatedAppBarState();
@@ -34,6 +40,16 @@ class _AuthenticatedAppBarState extends State<AuthenticatedAppBar> {
   @override
   Widget build(BuildContext context) {
     return AppBar(
+      leading:
+          widget.showReportsButton
+              ? IconButton(
+                icon: const Icon(Icons.bar_chart),
+                tooltip: 'Отчеты',
+                onPressed: () {
+                  Navigator.pushNamed(context, '/reports');
+                },
+              )
+              : null,
       centerTitle: true,
       title: Text(widget.title),
       actions: [

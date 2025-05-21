@@ -448,7 +448,10 @@ class _StatisticsPageState extends State<StatisticsPage> {
                         const SizedBox(height: 16),
                         buildStatsSection('Устройства', _deviceStats),
                         buildStatsSection('Браузеры', _browserStats),
-                        buildStatsSection('Рефереры', _referrerStats),
+                        buildStatsSection(
+                          'Источники переходов',
+                          _referrerStats,
+                        ),
                       ],
                     ),
                   ),

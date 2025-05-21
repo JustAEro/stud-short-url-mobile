@@ -111,7 +111,10 @@ class _MainPageState extends State<MainPage> {
     DateFormat dateFormat = DateFormat('dd-MM-yyyy HH:mm:ss');
 
     return Scaffold(
-      appBar: const AuthenticatedAppBar(title: 'Ваши короткие ссылки'),
+      appBar: const AuthenticatedAppBar(
+        title: 'Короткие ссылки',
+        showReportsButton: true,
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
 

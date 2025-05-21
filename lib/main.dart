@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:stud_short_url_mobile/pages/reports_page.dart';
 import 'package:stud_short_url_mobile/services/auth_service.dart';
 
 import 'pages/create_short_link_page.dart';
@@ -20,7 +21,6 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-
   late Future<bool> _isAuthenticated;
 
   @override
@@ -31,30 +31,35 @@ class _MyAppState extends State<MyApp> {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'Short Links',
-      theme: ThemeData(primarySwatch: Colors.blue),
-      home: FutureBuilder<bool>(
-        future: _isAuthenticated,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Scaffold(
-              body: Center(child: CircularProgressIndicator()),
-            ); // Пока загружается
-          } else if (snapshot.hasData && snapshot.data == true) {
-            return MainPage(); // Если авторизован
-          } else {
-            return LoginPage(); // Если не авторизован
-          }
-        },
-      ),
-      // initialRoute: '/',
-      routes: {
-        // '/': (context) => MainPage(),
-        '/create': (context) => CreateShortLinkPage(),
-        '/login': (context) => LoginPage(),
-        '/signup': (context) => RegisterPage(),
+    return FutureBuilder<bool>(
+      future: _isAuthenticated,
+      builder: (context, snapshot) {
+        // Пока не получены данные — просто спиннер
+        if (snapshot.connectionState != ConnectionState.done) {
+          return const MaterialApp(
+            debugShowCheckedModeBanner: false,
+            home: Scaffold(body: Center(child: CircularProgressIndicator())),
+          );
+        }
+
+        // Выбор домашней страницы
+        final bool isAuthenticated = snapshot.data ?? false;
+        final Widget homePage =
+            isAuthenticated ? const MainPage() : const LoginPage();
+
+        // Только один MaterialApp
+        return MaterialApp(
+          debugShowCheckedModeBanner: false,
+          title: 'Short Links',
+          theme: ThemeData(primarySwatch: Colors.blue),
+          home: homePage,
+          routes: {
+            '/create': (context) => const CreateShortLinkPage(),
+            '/login': (context) => const LoginPage(),
+            '/signup': (context) => const RegisterPage(),
+            '/reports': (context) => const ReportsPage(),
+          },
+        );
       },
     );
   }
