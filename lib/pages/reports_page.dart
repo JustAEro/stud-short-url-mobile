@@ -5,6 +5,8 @@ import 'dart:convert';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:stud_short_url_mobile/widgets/authenticated_app_bar.dart';
 
+import 'create_report_page.dart';
+
 class ReportsPage extends StatefulWidget {
   const ReportsPage({super.key});
 
@@ -80,6 +82,21 @@ class _ReportsPageState extends State<ReportsPage> {
                   );
                 },
               ),
+
+      floatingActionButton: FloatingActionButton(
+        onPressed: () async {
+          final result = await Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const CreateReportPage()),
+          );
+
+          if (result == true) {
+            loadReports(); // обновить список после создания
+          }
+        },
+        tooltip: 'Создать отчет',
+        child: const Icon(Icons.add),
+      ),
     );
   }
 }
