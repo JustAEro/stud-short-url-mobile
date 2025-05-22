@@ -7,6 +7,7 @@ import 'pages/create_short_link_page.dart';
 import 'pages/login_page.dart';
 import 'pages/main_page.dart';
 import 'pages/register_page.dart';
+import 'services/navigation_service.dart';
 
 Future<void> main() async {
   await dotenv.load(fileName: "env");
@@ -50,6 +51,7 @@ class _MyAppState extends State<MyApp> {
         // Только один MaterialApp
         return MaterialApp(
           debugShowCheckedModeBanner: false,
+          navigatorKey: navigatorKey,
           title: 'Short Links',
           theme: ThemeData(primarySwatch: Colors.blue),
           home: homePage,

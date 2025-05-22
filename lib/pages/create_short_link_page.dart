@@ -1,7 +1,5 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:http/http.dart' as http;
+import 'package:stud_short_url_mobile/clients/dio_client.dart';
 import 'package:stud_short_url_mobile/services/auth_service.dart';
 import 'package:stud_short_url_mobile/widgets/authenticated_app_bar.dart';
 
@@ -24,15 +22,6 @@ class _CreateShortLinkPageState extends State<CreateShortLinkPage> {
       final String longUrl = _longUrlController.text;
       final String description = _descriptionController.text;
 
-      final token = await AuthService().getToken();
-      if (token == null) {
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Ошибка: вы не авторизованы')),
-        );
-        return;
-      }
-
       final userInfo = await AuthService().getUserInfo();
       if (userInfo == null) {
         if (!mounted) return;
@@ -44,26 +33,22 @@ class _CreateShortLinkPageState extends State<CreateShortLinkPage> {
         return;
       }
 
-      final url = Uri.parse('${dotenv.env['API_URL']}/api/v1/short-links');
-
       try {
-        final response = await http.post(
-          url,
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer $token',
-          },
-          body: jsonEncode({
+        final dio = DioClient().dio;
+
+        final response = await dio.post(
+          '/api/v1/short-links',
+          data: {
             'login': userInfo['login'],
             'longLink': longUrl,
             'description': description,
-          }),
+          },
         );
 
         if (!mounted) return;
 
         if (response.statusCode == 200 || response.statusCode == 201) {
-          final data = jsonDecode(response.body);
+          final data = response.data;
           final String linkId = data['id'];
           final String shortKey = data['shortKey'];
 
@@ -77,7 +62,7 @@ class _CreateShortLinkPageState extends State<CreateShortLinkPage> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(
-                'Ошибка при создании ссылки: ${response.statusCode} ${response.body}',
+                'Ошибка при создании ссылки: ${response.statusCode} ${response.data}',
               ),
             ),
           );

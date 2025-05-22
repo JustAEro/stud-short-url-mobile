@@ -1,9 +1,5 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:http/http.dart' as http;
-import 'package:stud_short_url_mobile/services/auth_service.dart';
+import 'package:stud_short_url_mobile/clients/dio_client.dart';
 import 'package:stud_short_url_mobile/widgets/authenticated_app_bar.dart';
 
 class PermissionsPage extends StatefulWidget {
@@ -29,7 +25,7 @@ class _PermissionsPageState extends State<PermissionsPage> {
   String selectedRole = 'viewer';
   bool _isLoading = true;
 
-  final AuthService _authService = AuthService();
+  final _dio = DioClient().dio;
 
   final List<String> roles = ['viewer', 'editor', 'admin'];
 
@@ -73,17 +69,12 @@ class _PermissionsPageState extends State<PermissionsPage> {
     });
 
     try {
-      final token = await _authService.getToken();
-
-      final response = await http.get(
-        Uri.parse(
-          '${dotenv.env['API_URL']}/api/v1/edit-permission/${widget.linkId}',
-        ),
-        headers: {'Authorization': 'Bearer $token'},
+      final response = await _dio.get(
+        '/api/v1/edit-permission/${widget.linkId}',
       );
 
       if (response.statusCode == 200) {
-        final data = json.decode(response.body) as List;
+        final data = response.data as List;
         setState(() {
           users =
               data
@@ -120,17 +111,9 @@ class _PermissionsPageState extends State<PermissionsPage> {
     if (login.isEmpty) return;
 
     try {
-      final token = await _authService.getToken();
-
-      final response = await http.post(
-        Uri.parse(
-          '${dotenv.env['API_URL']}/api/v1/edit-permission/add/${widget.linkId}',
-        ),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-        body: json.encode({'login': login, 'role': role}),
+      final response = await _dio.post(
+        '/api/v1/edit-permission/add/${widget.linkId}',
+        data: {'login': login, 'role': role},
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
@@ -144,7 +127,7 @@ class _PermissionsPageState extends State<PermissionsPage> {
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Ошибка добавления пользователя: ${response.body}'),
+            content: Text('Ошибка добавления пользователя: ${response.data}'),
           ),
         );
       }
@@ -159,13 +142,8 @@ class _PermissionsPageState extends State<PermissionsPage> {
 
   Future<void> _removePermission(String login) async {
     try {
-      final token = await _authService.getToken();
-
-      final response = await http.delete(
-        Uri.parse(
-          '${dotenv.env['API_URL']}/api/v1/edit-permission/remove/${widget.linkId}/login/$login',
-        ),
-        headers: {'Authorization': 'Bearer $token'},
+      final response = await _dio.delete(
+        '/api/v1/edit-permission/remove/${widget.linkId}/login/$login',
       );
 
       if (response.statusCode == 200) {
@@ -188,17 +166,9 @@ class _PermissionsPageState extends State<PermissionsPage> {
 
   Future<void> _updatePermission(String login, String newRole) async {
     try {
-      final token = await _authService.getToken();
-
-      final response = await http.patch(
-        Uri.parse(
-          '${dotenv.env['API_URL']}/api/v1/edit-permission/update/${widget.linkId}',
-        ),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-        body: json.encode({'login': login, 'role': newRole}),
+      final response = await _dio.patch(
+        '/api/v1/edit-permission/update/${widget.linkId}',
+        data: {'login': login, 'role': newRole},
       );
 
       if (response.statusCode == 200) {

@@ -1,6 +1,8 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:stud_short_url_mobile/services/auth_service.dart';
+import 'package:stud_short_url_mobile/services/token_service.dart';
+import 'package:stud_short_url_mobile/services/navigation_service.dart';
+
 
 class DioClient {
   static final DioClient _instance = DioClient._internal();
@@ -25,7 +27,7 @@ class DioClient {
 
     dio.interceptors.add(InterceptorsWrapper(
       onRequest: (options, handler) async {
-        final token = await AuthService().getToken();
+        final token = await TokenService().getToken();
 
         if (token != null) {
           options.headers['Authorization'] = 'Bearer $token';
@@ -33,7 +35,18 @@ class DioClient {
 
         return handler.next(options);
       },
-      onError: (DioException e, handler) {
+      onError: (DioException e, handler) async {
+        if (e.response?.statusCode == 401) {
+          // Очистка токена
+          await TokenService().clearToken();
+
+          // Перенаправление на страницу логина
+          navigatorKey.currentState?.pushNamedAndRemoveUntil(
+            '/login',
+            (route) => false,
+          );
+        }
+
         return handler.next(e);
       },
     ));

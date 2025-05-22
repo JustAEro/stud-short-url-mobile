@@ -1,10 +1,7 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:intl/intl.dart';
+import 'package:stud_short_url_mobile/clients/dio_client.dart';
 import 'package:stud_short_url_mobile/link-access-roles/link_access_roles.dart';
-import 'package:stud_short_url_mobile/services/auth_service.dart';
 import 'package:stud_short_url_mobile/widgets/authenticated_app_bar.dart';
 
 class EditPage extends StatefulWidget {
@@ -25,7 +22,8 @@ class _EditPageState extends State<EditPage> {
   String createdAt = '';
   String updatedAt = '';
   bool _isLoading = true;
-  final AuthService _authService = AuthService();
+
+  final _dio = DioClient().dio;
 
   DateFormat dateFormat = DateFormat('dd-MM-yyyy HH:mm:ss');
 
@@ -42,17 +40,13 @@ class _EditPageState extends State<EditPage> {
     });
 
     try {
-      final token = await _authService.getToken();
-
-      final response = await http.get(
-        Uri.parse(
-          '${dotenv.env['API_URL']}/api/v1/short-links/no-stats/${widget.shortKey}',
-        ),
-        headers: {'Authorization': 'Bearer $token'},
+      final response = await _dio.get(
+        '/api/v1/short-links/no-stats/${widget.shortKey}',
       );
 
       if (response.statusCode == 200) {
-        final data = json.decode(response.body);
+        final data = response.data;
+
         setState(() {
           _urlController.text = data['longLink'];
           _descriptionController.text = data['description'] ?? '';
@@ -68,7 +62,7 @@ class _EditPageState extends State<EditPage> {
       } else {
         if (!mounted) return;
 
-        print('Error: ${response.body}');
+        print('Error: ${response.data}');
 
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Ошибка загрузки данных ссылки')),
@@ -93,24 +87,13 @@ class _EditPageState extends State<EditPage> {
     final String updatedDescription = _descriptionController.text;
 
     try {
-      final token = await _authService.getToken();
-
-      final response = await http.put(
-        Uri.parse(
-          '${dotenv.env['API_URL']}/api/v1/short-links/${widget.shortKey}',
-        ),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-        body: json.encode({
-          'longLink': updatedUrl,
-          'description': updatedDescription,
-        }),
+      final response = await _dio.put(
+        '/api/v1/short-links/${widget.shortKey}',
+        data: {'longLink': updatedUrl, 'description': updatedDescription},
       );
 
       if (response.statusCode == 200) {
-        final data = json.decode(response.body);
+        final data = response.data;
         setState(() {
           updatedAt = dateFormat.format(
             DateTime.parse(data['updatedAt']).toLocal(),
@@ -138,16 +121,10 @@ class _EditPageState extends State<EditPage> {
     }
   }
 
-  // Моковая функция удаления ссылки
   Future<void> _deleteLink() async {
     try {
-      final token = await _authService.getToken();
-
-      final response = await http.delete(
-        Uri.parse(
-          '${dotenv.env['API_URL']}/api/v1/short-links/${widget.shortKey}',
-        ),
-        headers: {'Authorization': 'Bearer $token'},
+      final response = await _dio.delete(
+        '/api/v1/short-links/${widget.shortKey}',
       );
 
       if (response.statusCode == 200) {
@@ -184,7 +161,9 @@ class _EditPageState extends State<EditPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AuthenticatedAppBar(title: canEdit ? "Редактирование" : "Просмотр"),
+      appBar: AuthenticatedAppBar(
+        title: canEdit ? "Редактирование" : "Просмотр",
+      ),
       body:
           _isLoading
               ? const Center(child: CircularProgressIndicator())

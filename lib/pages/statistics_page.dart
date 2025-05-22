@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
+import 'package:stud_short_url_mobile/clients/dio_client.dart';
 
-import 'package:stud_short_url_mobile/services/auth_service.dart';
 import 'package:stud_short_url_mobile/widgets/authenticated_app_bar.dart';
 import 'package:stud_short_url_mobile/widgets/build_stats_section.dart';
 
@@ -36,6 +33,8 @@ class _StatisticsPageState extends State<StatisticsPage> {
   final ScrollController _horizontalScrollController = ScrollController();
   final ScrollController _verticalScrollController = ScrollController();
 
+  final _dio = DioClient().dio;
+
   @override
   void initState() {
     super.initState();
@@ -55,17 +54,12 @@ class _StatisticsPageState extends State<StatisticsPage> {
     });
 
     try {
-      final token = await AuthService().getToken();
-
-      final response = await http.get(
-        Uri.parse(
-          '${dotenv.env['API_URL']}/api/v1/link-stat/${widget.shortKey}/stats?timeScale=$_timeScale',
-        ),
-        headers: {'Authorization': 'Bearer $token'},
+      final response = await _dio.get(
+        '/api/v1/link-stat/${widget.shortKey}/stats?timeScale=$_timeScale',
       );
 
       if (response.statusCode == 200) {
-        final data = json.decode(response.body);
+        final data = response.data;
 
         setState(() {
           _labels = List<String>.from(data['labels']);
@@ -76,7 +70,7 @@ class _StatisticsPageState extends State<StatisticsPage> {
           );
         });
       } else {
-        print(response.body);
+        print(response.data);
         if (!mounted) return;
 
         ScaffoldMessenger.of(context).showSnackBar(
@@ -84,15 +78,12 @@ class _StatisticsPageState extends State<StatisticsPage> {
         );
       }
 
-      final detailsResponse = await http.get(
-        Uri.parse(
-          '${dotenv.env['API_URL']}/api/v1/link-stat/${widget.shortKey}/details',
-        ),
-        headers: {'Authorization': 'Bearer $token'},
+      final detailsResponse = await _dio.get(
+        '/api/v1/link-stat/${widget.shortKey}/details',
       );
 
       if (detailsResponse.statusCode == 200) {
-        final stats = json.decode(detailsResponse.body);
+        final stats = detailsResponse.data;
         setState(() {
           _totalClicks = stats['total'];
           _deviceStats = {

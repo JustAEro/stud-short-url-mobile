@@ -1,10 +1,6 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:http/http.dart' as http;
+import 'package:stud_short_url_mobile/clients/dio_client.dart';
 import 'package:stud_short_url_mobile/link-access-roles/link_access_roles.dart';
-import 'package:stud_short_url_mobile/services/auth_service.dart';
 
 import 'edit_page.dart';
 import 'permissions_page.dart';
@@ -30,7 +26,7 @@ class _ShortLinkPageState extends State<ShortLinkPage> {
   int _selectedIndex = 0;
   bool _isLoading = true;
 
-  final AuthService _authService = AuthService();
+  final _dio = DioClient().dio;
 
   @override
   void initState() {
@@ -44,18 +40,13 @@ class _ShortLinkPageState extends State<ShortLinkPage> {
     });
 
     try {
-      final token = await _authService.getToken();
-
-      final response = await http.get(
-        Uri.parse(
-          '${dotenv.env['API_URL']}/api/v1/short-links/no-stats/${widget.shortKey}',
-        ),
-        headers: {'Authorization': 'Bearer $token'},
+      final response = await _dio.get(
+        '/api/v1/short-links/no-stats/${widget.shortKey}',
       );
 
       if (response.statusCode == 200) {
         setState(() {
-          shortLinkData = json.decode(response.body);
+          shortLinkData = response.data;
         });
       } else {
         if (!mounted) return;

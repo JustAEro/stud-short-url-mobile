@@ -1,8 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:stud_short_url_mobile/services/auth_service.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:stud_short_url_mobile/clients/dio_client.dart';
 import 'package:stud_short_url_mobile/widgets/authenticated_app_bar.dart';
 
 import 'create_report_page.dart';
@@ -18,6 +15,8 @@ class _ReportsPageState extends State<ReportsPage> {
   List<Map<String, dynamic>> reports = [];
   bool loading = false;
 
+  final _dio = DioClient().dio;
+
   @override
   void initState() {
     super.initState();
@@ -30,14 +29,12 @@ class _ReportsPageState extends State<ReportsPage> {
     });
 
     try {
-      final token = await AuthService().getToken();
-      final response = await http.get(
-        Uri.parse('${dotenv.env['API_URL']}/api/v1/reports'),
-        headers: {'Authorization': 'Bearer $token'},
+      final response = await _dio.get(
+        '/api/v1/reports'
       );
 
       if (response.statusCode == 200) {
-        final data = json.decode(response.body);
+        final data = response.data;
         setState(() {
           reports = List<Map<String, dynamic>>.from(data);
         });

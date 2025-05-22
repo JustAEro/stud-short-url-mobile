@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:stud_short_url_mobile/services/auth_service.dart';
+import 'package:stud_short_url_mobile/clients/dio_client.dart';
 import 'package:stud_short_url_mobile/widgets/authenticated_app_bar.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:intl/intl.dart';
-import 'dart:convert';
-import 'package:http/http.dart' as http;
 
 import 'short_link_page.dart';
 
@@ -29,6 +27,8 @@ class _MainPageState extends State<MainPage> {
 
   final ScrollController _scrollController = ScrollController();
 
+  final _dio = DioClient().dio;
+
   @override
   void initState() {
     super.initState();
@@ -47,17 +47,12 @@ class _MainPageState extends State<MainPage> {
     });
 
     try {
-      final token = await AuthService().getToken();
-
-      final response = await http.get(
-        Uri.parse(
-          '${dotenv.env['API_URL']}/api/v1/short-links?sortBy=$sortBy&sortDirection=$sortDirection&search=$searchQuery&page=$page&limit=$limit',
-        ),
-        headers: {'Authorization': 'Bearer $token'},
+      final response = await _dio.get(
+        '/api/v1/short-links?sortBy=$sortBy&sortDirection=$sortDirection&search=$searchQuery&page=$page&limit=$limit',
       );
 
       if (response.statusCode == 200) {
-        final data = json.decode(response.body);
+        final data = response.data;
         setState(() {
           if (page == 1) {
             shortLinks = List<Map<String, dynamic>>.from(data['data']);
@@ -67,7 +62,7 @@ class _MainPageState extends State<MainPage> {
           totalPages = data['totalPages'];
         });
       } else {
-        print(response.body);
+        print(response.data);
         throw Exception('Failed to load short links');
       }
     } catch (e) {
