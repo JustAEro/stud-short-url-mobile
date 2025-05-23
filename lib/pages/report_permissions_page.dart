@@ -4,8 +4,9 @@ import 'package:stud_short_url_mobile/widgets/authenticated_app_bar.dart';
 
 class ReportPermissionsPage extends StatefulWidget {
   final String reportId;
+  final bool canManagePermissions;
 
-  const ReportPermissionsPage({super.key, required this.reportId});
+  const ReportPermissionsPage({super.key, required this.reportId, required this.canManagePermissions});
 
   @override
   State<ReportPermissionsPage> createState() => _ReportPermissionsPageState();
@@ -156,15 +157,15 @@ class _ReportPermissionsPageState extends State<ReportPermissionsPage> {
     }
   }
 
-  @override
+ @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: const AuthenticatedAppBar(title: 'Права доступа к отчету'),
+      appBar: const AuthenticatedAppBar(title: "Права доступа"),
       body:
           _isLoading
               ? const Center(child: CircularProgressIndicator())
               : Padding(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+                padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 16.0),
                 child: Column(
                   children: [
                     const Text(
@@ -176,55 +177,12 @@ class _ReportPermissionsPageState extends State<ReportPermissionsPage> {
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: TextField(
-                            controller: _loginController,
-                            decoration: const InputDecoration(
-                              labelText: 'Логин пользователя',
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        DropdownButton<String>(
-                          value: selectedRole,
-                          items:
-                              roles.map((role) {
-                                return DropdownMenuItem<String>(
-                                  value: role,
-                                  child: Row(
-                                    children: [
-                                      getRoleIcon(role),
-                                      const SizedBox(width: 8),
-                                    ],
-                                  ),
-                                );
-                              }).toList(),
-                          onChanged: (value) {
-                            if (value != null) {
-                              setState(() {
-                                selectedRole = value;
-                              });
-                            }
-                          },
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.add),
-                          onPressed:
-                              () => _addPermission(
-                                _loginController.text.trim(),
-                                selectedRole,
-                              ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
                     Expanded(
                       child: Scrollbar(
-                        controller: _scrollController,
                         thumbVisibility: true,
+                        controller: _scrollController,
                         child: ListView.builder(
+                          padding: const EdgeInsets.only(bottom: 16),
                           controller: _scrollController,
                           itemCount: users.length,
                           itemBuilder: (context, index) {
@@ -243,12 +201,13 @@ class _ReportPermissionsPageState extends State<ReportPermissionsPage> {
                                           roles.map((role) {
                                             return DropdownMenuItem<String>(
                                               value: role,
-                                              child: getRoleIcon(role),
+                                              child: Row(
+                                                children: [getRoleIcon(role)],
+                                              ),
                                             );
                                           }).toList(),
                                       onChanged: (value) {
-                                        if (value != null &&
-                                            value != user['role']) {
+                                        if (value != null) {
                                           _updatePermission(
                                             user['login']!,
                                             value,
@@ -256,8 +215,12 @@ class _ReportPermissionsPageState extends State<ReportPermissionsPage> {
                                         }
                                       },
                                     ),
+                                    const SizedBox(width: 12),
                                     IconButton(
-                                      icon: const Icon(Icons.delete),
+                                      icon: const Icon(
+                                        Icons.remove_circle,
+                                        color: Colors.red,
+                                      ),
                                       onPressed:
                                           () =>
                                               _removePermission(user['login']!),
@@ -270,9 +233,85 @@ class _ReportPermissionsPageState extends State<ReportPermissionsPage> {
                         ),
                       ),
                     ),
+                    if (widget.canManagePermissions)
+                      Align(
+                        alignment: Alignment.center,
+                        child: ElevatedButton(
+                          onPressed: () {
+                            showModalBottomSheet(
+                              context: context,
+                              isScrollControlled: true,
+                              builder: (context) {
+                                return Padding(
+                                  padding: MediaQuery.of(context).viewInsets,
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(16.0),
+                                    child: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        TextField(
+                                          controller: _loginController,
+                                          decoration: const InputDecoration(
+                                            labelText: 'Логин пользователя',
+                                            border: OutlineInputBorder(),
+                                          ),
+                                        ),
+                                        const SizedBox(height: 8),
+                                        DropdownButtonFormField<String>(
+                                          value: selectedRole,
+                                          decoration: const InputDecoration(
+                                            labelText: 'Роль',
+                                            border: OutlineInputBorder(),
+                                          ),
+                                          items:
+                                              roles.map((role) {
+                                                return DropdownMenuItem<String>(
+                                                  value: role,
+                                                  child: Row(
+                                                    children: [
+                                                      getRoleIcon(role),
+                                                      const SizedBox(width: 8),
+                                                      Text(roleLabels[role]!),
+                                                    ],
+                                                  ),
+                                                );
+                                              }).toList(),
+                                          onChanged: (value) {
+                                            if (value != null) {
+                                              setState(() {
+                                                selectedRole = value;
+                                              });
+                                            }
+                                          },
+                                        ),
+                                        const SizedBox(height: 16),
+                                        ElevatedButton(
+                                          onPressed: () {
+                                            _addPermission(
+                                              _loginController.text,
+                                              selectedRole,
+                                            );
+                                            Navigator.pop(context);
+                                          },
+                                          child: const Text('Добавить'),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                );
+                              },
+                            );
+                          },
+                          child: const Text(
+                            'Добавить пользователя',
+                            style: TextStyle(color: Colors.blue),
+                          ),
+                        ),
+                      ),
                   ],
                 ),
               ),
     );
   }
+
 }

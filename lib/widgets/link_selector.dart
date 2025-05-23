@@ -2,11 +2,21 @@ import 'package:flutter/material.dart';
 import 'package:stud_short_url_mobile/clients/dio_client.dart';
 import 'package:stud_short_url_mobile/dto/link_item.dart';
 import 'package:stud_short_url_mobile/dto/paginated_links.dart';
+import 'package:stud_short_url_mobile/dto/short_link.dto.dart';
 
 class LinkSelector extends StatefulWidget {
   final void Function(List<String>) onSelectionChanged;
 
-  const LinkSelector({super.key, required this.onSelectionChanged});
+  final List<String> initialSelectedIds;
+
+  final List<ShortLinkDto> initialSelectedLinks;
+
+  const LinkSelector({
+    super.key,
+    required this.onSelectionChanged,
+    this.initialSelectedIds = const [],
+    this.initialSelectedLinks = const [],
+  });
 
   @override
   State<LinkSelector> createState() => _LinkSelectorState();
@@ -16,7 +26,8 @@ class _LinkSelectorState extends State<LinkSelector> {
   final ScrollController _scrollController = ScrollController();
 
   List<LinkItem> shortLinks = [];
-  Set<String> selectedIds = {};
+  late Set<String> selectedIds;
+  late List<LinkItem> initialLinks;
   bool loading = false;
 
   String sortBy = 'updatedAt';
@@ -29,13 +40,40 @@ class _LinkSelectorState extends State<LinkSelector> {
   @override
   void initState() {
     super.initState();
+    initialLinks =
+        widget.initialSelectedLinks
+            .map(
+              (link) => LinkItem(
+                id: link.id,
+                shortKey: link.shortKey,
+                description: link.description,
+                longLink: link.longLink,
+                createdAt: link.createdAt,
+                updatedAt: link.updatedAt,
+                createdByUserId: link.createdByUserId,
+              ),
+            )
+            .toList();
+    selectedIds = widget.initialSelectedIds.toSet();
+    _scrollController.addListener(_onScroll);
     loadShortLinks(reset: true);
   }
 
   @override
   void dispose() {
+    _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
     super.dispose();
+  }
+
+  void _onScroll() {
+    if (_scrollController.position.pixels >=
+            _scrollController.position.maxScrollExtent - 100 &&
+        hasMore &&
+        !loading) {
+      page++;
+      loadShortLinks();
+    }
   }
 
   Future<void> loadShortLinks({bool reset = false}) async {
@@ -89,6 +127,13 @@ class _LinkSelectorState extends State<LinkSelector> {
 
   @override
   Widget build(BuildContext context) {
+    final allLinks = [
+      ...initialLinks.where(
+        (link) => !shortLinks.any((existing) => existing.id == link.id),
+      ),
+      ...shortLinks,
+    ];
+
     return Column(
       children: [
         TextField(
@@ -147,9 +192,10 @@ class _LinkSelectorState extends State<LinkSelector> {
                     controller: _scrollController,
                     thumbVisibility: true,
                     child: ListView.builder(
-                      itemCount: shortLinks.length,
+                      controller: _scrollController,
+                      itemCount: allLinks.length,
                       itemBuilder: (context, index) {
-                        final link = shortLinks[index];
+                        final link = allLinks[index];
                         final displayText =
                             link.description.isNotEmpty
                                 ? link.description
@@ -173,17 +219,6 @@ class _LinkSelectorState extends State<LinkSelector> {
                     ),
                   ),
         ),
-        if (hasMore && !loading)
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            child: ElevatedButton(
-              onPressed: () {
-                page++;
-                loadShortLinks();
-              },
-              child: const Text('Загрузить ещё'),
-            ),
-          ),
         if (loading && shortLinks.isNotEmpty)
           const Padding(
             padding: EdgeInsets.symmetric(vertical: 8),

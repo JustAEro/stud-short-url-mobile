@@ -238,7 +238,7 @@ class _ReportStatisticsPageState extends State<ReportStatisticsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: const AuthenticatedAppBar(title: "Статистика отчета"),
+      appBar: const AuthenticatedAppBar(title: "Статистика"),
       body:
           _isLoading
               ? const Center(child: CircularProgressIndicator())

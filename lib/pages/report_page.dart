@@ -4,7 +4,6 @@ import 'package:stud_short_url_mobile/report-access-roles/report_access_roles.da
 import 'report_statistics_page.dart';
 import 'edit_report_page.dart';
 import 'report_permissions_page.dart';
-import 'share_report_page.dart';
 
 class ReportPage extends StatefulWidget {
   final String reportId;
@@ -85,9 +84,9 @@ class _ReportPageState extends State<ReportPage> {
         EditReportPage(reportId: widget.reportId),
         if (canManagePermissions)
           ReportPermissionsPage(
+            canManagePermissions: canManagePermissions,
             reportId: widget.reportId,
           ),
-        ShareReportPage(reportId: widget.reportId),
       ][_selectedIndex],
       bottomNavigationBar: NavigationBar(
         selectedIndex: _selectedIndex,
@@ -117,10 +116,6 @@ class _ReportPageState extends State<ReportPage> {
               icon: Icon(Icons.lock),
               label: 'Доступ',
             ),
-          const NavigationDestination(
-            icon: Icon(Icons.share),
-            label: 'Поделиться',
-          ),
         ],
       ),
     );
