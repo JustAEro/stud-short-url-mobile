@@ -357,7 +357,7 @@ class _ReportStatisticsPageState extends State<ReportStatisticsPage> {
                       ),
 
                       buildStatsSection(
-                        'Рефереры',
+                        'Источники переходов',
                         Map.fromEntries(
                           _reportStats!.aggregate.byReferrer.map(
                             (e) => MapEntry(e.referrer, e.count),
