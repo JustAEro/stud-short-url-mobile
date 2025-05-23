@@ -3,6 +3,7 @@ import 'package:stud_short_url_mobile/clients/dio_client.dart';
 import 'package:stud_short_url_mobile/widgets/authenticated_app_bar.dart';
 
 import 'create_report_page.dart';
+import 'report_page.dart';
 
 class ReportsPage extends StatefulWidget {
   const ReportsPage({super.key});
@@ -29,9 +30,7 @@ class _ReportsPageState extends State<ReportsPage> {
     });
 
     try {
-      final response = await _dio.get(
-        '/api/v1/reports'
-      );
+      final response = await _dio.get('/api/v1/reports');
 
       if (response.statusCode == 200) {
         final data = response.data;
@@ -51,9 +50,10 @@ class _ReportsPageState extends State<ReportsPage> {
   }
 
   void openReportDetail(Map<String, dynamic> report) {
-    // Пока просто выводим в консоль
-    print('Открыть отчет: ${report['name']}');
-    // TODO: Перейти на страницу подробного отчета
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => ReportPage(reportId: report['id'])),
+    );
   }
 
   @override
