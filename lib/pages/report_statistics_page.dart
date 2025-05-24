@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:stud_short_url_mobile/clients/dio_client.dart';
@@ -5,6 +7,9 @@ import 'package:stud_short_url_mobile/dto/full_report_dto.dart';
 import 'package:stud_short_url_mobile/shared/always_visible_scroll_behavoir.dart';
 import 'package:stud_short_url_mobile/widgets/authenticated_app_bar.dart';
 import 'package:stud_short_url_mobile/widgets/build_stats_section.dart';
+import 'package:dio/dio.dart';
+import 'package:open_file/open_file.dart';
+import 'package:file_picker/file_picker.dart';
 
 class ReportStatisticsPage extends StatefulWidget {
   final String reportId;
@@ -72,6 +77,47 @@ class _ReportStatisticsPageState extends State<ReportStatisticsPage> {
     }
   }
 
+
+Future<void> _exportReport(String format) async {
+  try {
+    final response = await _dio.get<List<int>>(
+      '/api/v1/reports/${widget.reportId}/export',
+      queryParameters: {'format': format, 'timeScale': _timeScale},
+      options: Options(responseType: ResponseType.bytes),
+    );
+
+    final bytes = Uint8List.fromList(response.data!);
+
+    // Открыть диалог сохранения файла и сразу передать bytes
+    final savedPath = await FilePicker.platform.saveFile(
+      dialogTitle: 'Сохранить отчет как',
+      fileName: 'report_${widget.reportId}.$format',
+      bytes: bytes,
+      type: FileType.custom,
+      allowedExtensions: [format],
+    );
+
+    if (savedPath == null) {
+      // Пользователь отменил выбор
+      return;
+    }
+
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text("Файл сохранен: $savedPath")),
+    );
+
+    await OpenFile.open(savedPath);
+  } catch (e) {
+    print(e);
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Ошибка при экспорте отчета")),
+    );
+  }
+}
+
   Widget _buildClicksChart(LinkStatReportDto stat) {
     final spots = List.generate(
       stat.values.length,
@@ -84,6 +130,19 @@ class _ReportStatisticsPageState extends State<ReportStatisticsPage> {
         Text(
           'Переходы по ссылке: ${stat.shortKey}',
           style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
+
+        PopupMenuButton<String>(
+          icon: const Icon(Icons.download),
+          onSelected: (format) => _exportReport(format),
+          itemBuilder:
+              (context) => [
+                const PopupMenuItem(value: 'csv', child: Text('Экспорт в CSV')),
+                const PopupMenuItem(
+                  value: 'xlsx',
+                  child: Text('Экспорт в XLSX'),
+                ),
+              ],
         ),
 
         const SizedBox(height: 8),
