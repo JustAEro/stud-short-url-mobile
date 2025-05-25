@@ -22,6 +22,8 @@ class _EditReportPageState extends State<EditReportPage> {
   bool _loading = false;
   ReportAccessRole? _role;
 
+  late ReportWithPermissionsDto _loadedReport;
+
   @override
   void initState() {
     super.initState();
@@ -36,10 +38,10 @@ class _EditReportPageState extends State<EditReportPage> {
       final response = await dio.get('/api/v1/reports/${widget.reportId}');
       final report = ReportWithPermissionsDto.fromJson(response.data);
 
+      _loadedReport = report;
+
       _nameController.text = report.name;
-      _selectedLinkIds = List<String>.from(
-        report.shortLinks.map((l) => l.id),
-      );
+      _selectedLinkIds = List<String>.from(report.shortLinks.map((l) => l.id));
       _initialSelectedLinks = report.shortLinks;
       _role = report.role;
     } catch (e) {
@@ -78,6 +80,12 @@ class _EditReportPageState extends State<EditReportPage> {
         data: {
           'name': _nameController.text.trim(),
           'shortLinkIds': _selectedLinkIds,
+
+          'timeScale': _loadedReport.timeScale.name,
+          'chartType': _loadedReport.chartType.name,
+          'periodType': _loadedReport.periodType.name,
+          'customStart': _loadedReport.customStart?.toUtc().toIso8601String(),
+          'customEnd': _loadedReport.customEnd?.toUtc().toIso8601String(),
         },
       );
 
@@ -138,7 +146,12 @@ class _EditReportPageState extends State<EditReportPage> {
 
   @override
   Widget build(BuildContext context) {
-    final title = _loading ? 'Загрузка...' : 'Редактирование';
+    final title =
+        _loading
+            ? 'Загрузка...'
+            : _canEdit
+            ? 'Редактирование'
+            : 'Просмотр';
 
     return Scaffold(
       appBar: AuthenticatedAppBar(title: title),
@@ -151,17 +164,19 @@ class _EditReportPageState extends State<EditReportPage> {
                   children: [
                     TextField(
                       controller: _nameController,
+                      readOnly: !_canEdit,
                       decoration: const InputDecoration(
                         labelText: 'Название отчета',
                         border: OutlineInputBorder(),
                       ),
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 4),
                     Expanded(
                       child: LinkSelector(
                         initialSelectedIds: _selectedLinkIds,
                         initialSelectedLinks: _initialSelectedLinks,
                         onSelectionChanged: _onSelectionChanged,
+                        canEdit: _canEdit,
                       ),
                     ),
                     Row(

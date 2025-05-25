@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:stud_short_url_mobile/clients/dio_client.dart';
 import 'package:stud_short_url_mobile/dto/link_item.dart';
 import 'package:stud_short_url_mobile/dto/paginated_links.dart';
@@ -11,9 +12,12 @@ class LinkSelector extends StatefulWidget {
 
   final List<ShortLinkDto> initialSelectedLinks;
 
+  final bool canEdit;
+
   const LinkSelector({
     super.key,
     required this.onSelectionChanged,
+    required this.canEdit,
     this.initialSelectedIds = const [],
     this.initialSelectedLinks = const [],
   });
@@ -138,7 +142,7 @@ class _LinkSelectorState extends State<LinkSelector> {
       children: [
         TextField(
           decoration: const InputDecoration(
-            labelText: 'Поиск (описание или ключ)',
+            labelText: "Поиск (введите часть описания или ключа)",
           ),
           onChanged: (value) {
             searchQuery = value;
@@ -196,6 +200,10 @@ class _LinkSelectorState extends State<LinkSelector> {
                       itemCount: allLinks.length,
                       itemBuilder: (context, index) {
                         final link = allLinks[index];
+
+                        final shortUrl =
+                          '${dotenv.env['SHORT_LINKS_WEB_APP_URL']}/${link.shortKey}';
+                          
                         final displayText =
                             link.description.isNotEmpty
                                 ? link.description
@@ -207,8 +215,10 @@ class _LinkSelectorState extends State<LinkSelector> {
                             vertical: 4,
                           ),
                           child: CheckboxListTile(
+                            enabled: widget.canEdit,
+                            activeColor: const Color.fromARGB(215, 33, 149, 243),
                             title: Text(displayText),
-                            subtitle: Text(link.shortKey),
+                            subtitle: Text(shortUrl),
                             value: selectedIds.contains(link.id),
                             onChanged:
                                 (selected) =>

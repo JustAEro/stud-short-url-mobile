@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:stud_short_url_mobile/clients/dio_client.dart';
+import 'package:stud_short_url_mobile/dto/chart_types.dart';
 import 'package:stud_short_url_mobile/dto/full_report_dto.dart';
 import 'package:stud_short_url_mobile/shared/always_visible_scroll_behavoir.dart';
 import 'package:stud_short_url_mobile/widgets/authenticated_app_bar.dart';
@@ -10,6 +11,7 @@ import 'package:stud_short_url_mobile/widgets/build_stats_section.dart';
 import 'package:dio/dio.dart';
 import 'package:open_file/open_file.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:stud_short_url_mobile/widgets/report_chart_settings_bar.dart';
 
 class ReportStatisticsPage extends StatefulWidget {
   final String reportId;
@@ -22,10 +24,15 @@ class ReportStatisticsPage extends StatefulWidget {
 
 class _ReportStatisticsPageState extends State<ReportStatisticsPage> {
   bool _isLoading = true;
-  String _timeScale = 'hour';
-  String _chartType = 'line';
 
   FullReportDto? _reportStats;
+
+  ChartGranularity? _granularity;
+  ChartType? _chartTypeEnum;
+  ChartPeriod? _periodType;
+  DateTime? _customStart;
+  DateTime? _customEnd;
+  bool _canEdit = false;
 
   final _dio = DioClient().dio;
 
@@ -43,22 +50,29 @@ class _ReportStatisticsPageState extends State<ReportStatisticsPage> {
     super.dispose();
   }
 
-  void _updateChartType(String newType) {
-    setState(() {
-      _chartType = newType;
-    });
-  }
-
   Future<void> _fetchReportStats() async {
     setState(() => _isLoading = true);
 
     try {
+      print(DateTime.now().timeZoneOffset.inMinutes);
+      //final offset = DateTime.now().timeZoneOffset.inMinutes;
       final response = await _dio.get(
-        '/api/v1/reports/${widget.reportId}/stats?timeScale=$_timeScale',
+        '/api/v1/reports/${widget.reportId}/stats?timezoneOffsetInMinutes=-0',
       );
       if (response.statusCode == 200) {
         setState(() {
           _reportStats = FullReportDto.fromJson(response.data);
+
+          print(_reportStats!.linksStats[0].labels.last); 
+
+          _granularity = _reportStats!.timeScale;
+          _chartTypeEnum = _reportStats!.chartType;
+          _periodType = _reportStats!.periodType;
+          _customStart = _reportStats!.customStart;
+          _customEnd = _reportStats!.customEnd;
+          _canEdit =
+              _reportStats!.role == ReportRoles.editor ||
+              _reportStats!.role == ReportRoles.admin;
         });
       } else {
         if (!mounted) return;
@@ -77,221 +91,307 @@ class _ReportStatisticsPageState extends State<ReportStatisticsPage> {
     }
   }
 
+  Future<void> _updateReport({
+    required ChartGranularity granularity,
+    required ChartType chartType,
+    required ChartPeriod period,
+    DateTime? startDate,
+    DateTime? endDate,
+  }) async {
+    setState(() => _isLoading = true);
 
-Future<void> _exportReport(String format) async {
-  try {
-    final response = await _dio.get<List<int>>(
-      '/api/v1/reports/${widget.reportId}/export',
-      queryParameters: {'format': format, 'timeScale': _timeScale},
-      options: Options(responseType: ResponseType.bytes),
-    );
+    try {
+      final dio = DioClient().dio;
 
-    final bytes = Uint8List.fromList(response.data!);
+      final data = {
+        'name': _reportStats!.name,
+        'shortLinkIds': _reportStats!.shortLinks.map((l) => l.id).toList(),
+        'timeScale': granularity.name,
+        'chartType': chartType.name,
+        'periodType': period.name,
+        'customStart': startDate?.toUtc().toIso8601String(),
+        'customEnd': endDate?.toUtc().toIso8601String(),
+      };
 
-    // Открыть диалог сохранения файла и сразу передать bytes
-    final savedPath = await FilePicker.platform.saveFile(
-      dialogTitle: 'Сохранить отчет как',
-      fileName: 'report_${widget.reportId}.$format',
-      bytes: bytes,
-      type: FileType.custom,
-      allowedExtensions: [format],
-    );
+      print(data);
 
-    if (savedPath == null) {
-      // Пользователь отменил выбор
-      return;
+      await dio.put('/api/v1/reports/${widget.reportId}', data: data);
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Отчет успешно обновлен')));
+      Navigator.pop(context);
+    } catch (e) {
+      print('Ошибка при обновлении отчета: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Ошибка при обновлении отчета')),
+      );
+    } finally {
+      setState(() => _isLoading = false);
+    }
+  }
+
+  List<Color> _generateColors(int count) {
+    return List<Color>.generate(count, (i) {
+      final hue = (360 / count) * i;
+      return HSLColor.fromAHSL(1.0, hue, 0.6, 0.5).toColor();
+    });
+  }
+
+  Widget _buildCombinedChart() {
+    if (_reportStats == null || _reportStats!.linksStats.isEmpty) {
+      return const Text("Нет данных для отображения графика.");
     }
 
-    if (!mounted) return;
+    final labels = _reportStats!.linksStats.first.labels;
+    final chartWidth = labels.length * 120.0;
+    final colors = _generateColors(_reportStats!.linksStats.length);
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text("Файл сохранен: $savedPath")),
-    );
+    final lineBars = <LineChartBarData>[];
+    final barGroups = <BarChartGroupData>[];
 
-    await OpenFile.open(savedPath);
-  } catch (e) {
-    print(e);
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Ошибка при экспорте отчета")),
-    );
-  }
-}
+    for (int i = 0; i < labels.length; i++) {
+      final barRods = <BarChartRodData>[];
 
-  Widget _buildClicksChart(LinkStatReportDto stat) {
-    final spots = List.generate(
-      stat.values.length,
-      (index) => FlSpot(index.toDouble(), stat.values[index].toDouble()),
-    );
+      for (int j = 0; j < _reportStats!.linksStats.length; j++) {
+        final stat = _reportStats!.linksStats[j];
+        if (i < stat.values.length) {
+          final value = stat.values[i].toDouble();
+          barRods.add(BarChartRodData(toY: value, color: colors[j], width: 12));
+        }
+      }
+
+      barGroups.add(BarChartGroupData(x: i, barRods: barRods));
+    }
+
+    for (int i = 0; i < _reportStats!.linksStats.length; i++) {
+      final stat = _reportStats!.linksStats[i];
+      final spots = List.generate(
+        stat.values.length,
+        (index) => FlSpot(index.toDouble(), stat.values[index].toDouble()),
+      );
+
+      lineBars.add(
+        LineChartBarData(
+          spots: spots,
+          isCurved: false,
+          barWidth: 3,
+          color: colors[i],
+          dotData: FlDotData(show: true),
+          belowBarData: BarAreaData(show: false),
+        ),
+      );
+    }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Переходы по ссылке: ${stat.shortKey}',
-          style: const TextStyle(fontWeight: FontWeight.bold),
+        SizedBox(
+          height: 300,
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            controller: _horizontalScrollController,
+            padding: const EdgeInsets.fromLTRB(8, 8, 50, 8),
+            child: SizedBox(
+              width: chartWidth,
+              child:
+                  _chartTypeEnum == ChartType.line
+                      ? LineChart(
+                        LineChartData(
+                          lineBarsData: lineBars,
+                          gridData: FlGridData(show: true),
+                          titlesData: _buildTitlesData(labels),
+                          borderData: FlBorderData(show: true),
+                          lineTouchData: LineTouchData(
+                            enabled: true,
+                            touchTooltipData: LineTouchTooltipData(
+                              getTooltipColor: (_) => Colors.black87,
+                              getTooltipItems: (touchedSpots) {
+                                return touchedSpots.map((spot) {
+                                  final stat =
+                                      _reportStats!.linksStats[spot.barIndex];
+                                  return LineTooltipItem(
+                                    '${stat.description.isNotEmpty ? stat.description : stat.shortKey}: ${spot.y.toInt()}',
+                                    TextStyle(color: spot.bar.color),
+                                  );
+                                }).toList();
+                              },
+                            ),
+                          ),
+                        ),
+                      )
+                      : BarChart(
+                        BarChartData(
+                          barGroups: barGroups,
+                          gridData: FlGridData(show: true),
+                          titlesData: _buildTitlesData(labels),
+                          borderData: FlBorderData(show: true),
+                          barTouchData: BarTouchData(
+                            enabled: true,
+                            touchTooltipData: BarTouchTooltipData(
+                              getTooltipColor: (_) => Colors.black87,
+                              tooltipPadding: const EdgeInsets.all(8),
+                              tooltipRoundedRadius: 4,
+                              getTooltipItem: (
+                                group,
+                                groupIndex,
+                                rod,
+                                rodIndex,
+                              ) {
+                                final link = _reportStats!.linksStats[rodIndex];
+                                return BarTooltipItem(
+                                  '${link.description.isNotEmpty ? link.description : link.shortKey}: ${rod.toY.toInt()}',
+                                  TextStyle(color: colors[rodIndex]),
+                                );
+                              },
+                            ),
+                          ),
+                        ),
+                      ),
+            ),
+          ),
         ),
-
-        PopupMenuButton<String>(
-          icon: const Icon(Icons.download),
-          onSelected: (format) => _exportReport(format),
-          itemBuilder:
-              (context) => [
-                const PopupMenuItem(value: 'csv', child: Text('Экспорт в CSV')),
-                const PopupMenuItem(
-                  value: 'xlsx',
-                  child: Text('Экспорт в XLSX'),
+        const SizedBox(height: 16),
+        Wrap(
+          spacing: 12,
+          runSpacing: 6,
+          children: List.generate(_reportStats!.linksStats.length, (index) {
+            final stat = _reportStats!.linksStats[index];
+            return Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 12,
+                  height: 12,
+                  decoration: BoxDecoration(
+                    color: colors[index],
+                    shape: BoxShape.circle,
+                  ),
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  stat.description.isNotEmpty
+                      ? stat.description
+                      : stat.shortKey,
                 ),
               ],
-        ),
-
-        const SizedBox(height: 8),
-
-        LayoutBuilder(
-          builder: (context, constraints) {
-            final chartWidth = stat.labels.length * 120.0;
-            final viewportWidth = constraints.maxWidth;
-
-            return Scrollbar(
-              controller: _horizontalScrollController,
-              thumbVisibility: true,
-
-              interactive: true,
-              scrollbarOrientation: ScrollbarOrientation.bottom,
-              child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                controller: _horizontalScrollController,
-                padding: const EdgeInsets.fromLTRB(8, 8, 50, 8),
-                child: SizedBox(
-                  height: 250,
-                  width:
-                      chartWidth < viewportWidth
-                          ? viewportWidth + 1
-                          : chartWidth,
-                  child: _buildChart(stat, spots),
-                ),
-              ),
             );
-          },
+          }),
         ),
       ],
     );
   }
 
-  Widget _buildChart(LinkStatReportDto stat, List<FlSpot> spots) {
-    return _chartType == 'line'
-        ? LineChart(
-          LineChartData(
-            clipData: FlClipData.none(),
-            gridData: FlGridData(show: true),
-            lineBarsData: [
-              LineChartBarData(
-                spots: spots,
-                isCurved: false,
-                barWidth: 3,
-                color: Colors.blue,
-                belowBarData: BarAreaData(
-                  show: false,
-                  color: Colors.blue.withOpacity(0.3),
-                ),
-              ),
-            ],
-            minX: 0,
-            maxX: spots.isNotEmpty ? spots.length - 1.0 : 1,
-            minY: 0,
-            maxY:
-                spots.isNotEmpty
-                    ? spots.map((e) => e.y).reduce((a, b) => a > b ? a : b) + 1
-                    : 1,
-            titlesData: FlTitlesData(
-              leftTitles: AxisTitles(
-                sideTitles: SideTitles(showTitles: true, reservedSize: 40),
-              ),
-              rightTitles: AxisTitles(
-                sideTitles: SideTitles(showTitles: false),
-              ),
-              topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-              bottomTitles: AxisTitles(
-                sideTitles: SideTitles(
-                  showTitles: true,
-                  interval: 1,
-                  getTitlesWidget: (value, meta) {
-                    int index = value.toInt();
-                    if (value % 1 != 0) return const SizedBox.shrink();
-                    if (index < 0 || index >= stat.labels.length) {
-                      return const SizedBox.shrink();
-                    }
-                    return Padding(
-                      padding: const EdgeInsets.only(
-                        top: 8.0,
-                        bottom: 8.0,
-                        left: 4.0,
-                        right: 4.0,
-                      ),
-                      child: Text(
-                        stat.labels[index],
-                        style: const TextStyle(fontSize: 8),
-                        textAlign: TextAlign.center,
-                      ),
-                    );
-                  },
-                  reservedSize: 60,
-                ),
-              ),
-            ),
-            borderData: FlBorderData(show: true),
+  FlTitlesData _buildTitlesData(List<String> labels) {
+    return FlTitlesData(
+      leftTitles: AxisTitles(
+        sideTitles: SideTitles(showTitles: true, reservedSize: 40),
+      ),
+      bottomTitles: AxisTitles(
+        sideTitles: SideTitles(
+          showTitles: true,
+          interval: 1,
+          getTitlesWidget: (value, meta) {
+            int index = value.toInt();
+            if (value % 1 != 0 || index < 0 || index >= labels.length) {
+              return const SizedBox.shrink();
+            }
+            return Padding(
+              padding: const EdgeInsets.only(top: 8.0),
+              child: Text(labels[index], style: const TextStyle(fontSize: 10)),
+            );
+          },
+          reservedSize: 50,
+        ),
+      ),
+      topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+      rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+    );
+  }
+
+  Widget _buildPerLinkDetailedStats() {
+    if (_reportStats == null || _reportStats!.linksStats.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        for (final linkStat in _reportStats!.linksStats) ...[
+          const SizedBox(height: 32),
+          Text(
+            'Статистика по ссылке: ${linkStat.description.isNotEmpty ? linkStat.description : linkStat.shortKey}',
+            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
           ),
-        )
-        : BarChart(
-          BarChartData(
-            gridData: FlGridData(show: true, drawVerticalLine: false),
-            titlesData: FlTitlesData(
-              leftTitles: AxisTitles(
-                sideTitles: SideTitles(showTitles: true, reservedSize: 40),
-              ),
-              rightTitles: AxisTitles(
-                sideTitles: SideTitles(showTitles: false),
-              ),
-              topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-              bottomTitles: AxisTitles(
-                sideTitles: SideTitles(
-                  showTitles: true,
-                  getTitlesWidget: (value, meta) {
-                    int index = value.toInt();
-                    return index >= 0 && index < stat.labels.length
-                        ? RotatedBox(
-                          quarterTurns: 0,
-                          child: Container(
-                            padding: const EdgeInsets.all(8.0),
-                            child: Text(
-                              stat.labels[index],
-                              style: const TextStyle(fontSize: 8),
-                            ),
-                          ),
-                        )
-                        : const SizedBox.shrink();
-                  },
-                  reservedSize: 40,
-                ),
-              ),
-            ),
-            borderData: FlBorderData(show: true),
-            barGroups: List.generate(
-              spots.length,
-              (index) => BarChartGroupData(
-                x: index,
-                barRods: [
-                  BarChartRodData(
-                    toY: spots[index].y,
-                    borderRadius: BorderRadius.circular(0),
-                    color: Colors.blue,
-                    width: 22.0,
-                  ),
-                ],
+          const SizedBox(height: 12),
+          buildStatsSection(
+            'Устройства',
+            Map.fromEntries(
+              linkStat.detailedStats.byDevice.map(
+                (e) => MapEntry(e.deviceType, e.count),
               ),
             ),
           ),
-        );
+          buildStatsSection(
+            'Браузеры',
+            Map.fromEntries(
+              linkStat.detailedStats.byBrowser.map(
+                (e) => MapEntry(e.browser, e.count),
+              ),
+            ),
+          ),
+          buildStatsSection(
+            'Источники переходов',
+            Map.fromEntries(
+              linkStat.detailedStats.byReferrer.map(
+                (e) => MapEntry(e.referrer, e.count),
+              ),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Future<void> _exportReport(String format) async {
+    try {
+      final response = await _dio.get<List<int>>(
+        '/api/v1/reports/${widget.reportId}/export',
+        queryParameters: {'format': format, 'timezoneOffsetInMinutes': 0},
+        options: Options(responseType: ResponseType.bytes),
+      );
+
+      final bytes = Uint8List.fromList(response.data!);
+
+      // Открыть диалог сохранения файла и сразу передать bytes
+      final savedPath = await FilePicker.platform.saveFile(
+        dialogTitle: 'Сохранить отчет как',
+        fileName: 'report_${widget.reportId}.$format',
+        bytes: bytes,
+        type: FileType.custom,
+        allowedExtensions: [format],
+      );
+
+      if (savedPath == null) {
+        // Пользователь отменил выбор
+        return;
+      }
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text("Файл сохранен: $savedPath")));
+
+      await OpenFile.open(savedPath);
+    } catch (e) {
+      print(e);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Ошибка при экспорте отчета")),
+      );
+    }
   }
 
   @override
@@ -309,6 +409,7 @@ Future<void> _exportReport(String format) async {
                   padding: const EdgeInsets.all(16),
                   child: Column(
                     children: [
+                      /*
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         spacing: 10.0,
@@ -385,6 +486,32 @@ Future<void> _exportReport(String format) async {
                           ),
                         ],
                       ),
+                      */
+                      if (_reportStats != null)
+                        ReportChartSettingsBar(
+                          initialGranularity: _granularity!,
+                          initialChartType: _chartTypeEnum!,
+                          initialPeriod: _periodType!,
+                          initialStartDate: _customStart,
+                          initialEndDate: _customEnd,
+                          isEditable: _canEdit,
+                          onSave: ({
+                            required ChartGranularity granularity,
+                            required ChartType chartType,
+                            required ChartPeriod period,
+                            DateTime? startDate,
+                            DateTime? endDate,
+                          }) async {
+                            await _updateReport(
+                              granularity: granularity,
+                              chartType: chartType,
+                              period: period,
+                              startDate: startDate,
+                              endDate: endDate,
+                            );
+                            await _fetchReportStats(); // перезагрузить статистику после обновления
+                          },
+                        ),
 
                       const SizedBox(height: 16),
                       Text(
@@ -395,7 +522,7 @@ Future<void> _exportReport(String format) async {
                         ),
                       ),
                       const SizedBox(height: 16),
-                      ..._reportStats!.linksStats.map(_buildClicksChart),
+                      _buildCombinedChart(),
                       const SizedBox(height: 24),
                       buildStatsSection(
                         'Устройства',
@@ -423,10 +550,29 @@ Future<void> _exportReport(String format) async {
                           ),
                         ),
                       ),
+                      _buildPerLinkDetailedStats(),
                     ],
                   ),
                 ),
               ),
+      floatingActionButton: FloatingActionButton(
+        backgroundColor: const Color.fromARGB(110, 33, 149, 243),
+        onPressed:
+            null, // сам onPressed не нужен, он будет обработан внутри PopupMenuButton
+        tooltip: 'Экспорт отчета',
+        child: PopupMenuButton<String>(
+          icon: const Icon(Icons.download, color: Colors.black87),
+          onSelected: (format) => _exportReport(format),
+          itemBuilder:
+              (context) => [
+                const PopupMenuItem(value: 'csv', child: Text('Экспорт в CSV')),
+                const PopupMenuItem(
+                  value: 'xlsx',
+                  child: Text('Экспорт в XLSX'),
+                ),
+              ],
+        ),
+      ),
     );
   }
 }

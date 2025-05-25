@@ -46,12 +46,12 @@ class _CreateReportPageState extends State<CreateReportPage> {
 
       // Можно обработать результат, например:
       //final reportId = response.data['id'];
-      
+
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Отчет успешно создан')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Отчет успешно создан')));
 
       // Навигация на страницу отчета (если она есть)
       // Navigator.pushNamed(context, '/reports/$reportId');
@@ -87,7 +87,10 @@ class _CreateReportPageState extends State<CreateReportPage> {
             ),
             const SizedBox(height: 16),
             Expanded(
-              child: LinkSelector(onSelectionChanged: _onSelectionChanged),
+              child: LinkSelector(
+                onSelectionChanged: _onSelectionChanged,
+                canEdit: true,
+              ),
             ),
           ],
         ),
@@ -96,11 +99,15 @@ class _CreateReportPageState extends State<CreateReportPage> {
         padding: const EdgeInsets.all(16.0),
         child: ElevatedButton(
           onPressed: _loading ? null : _submitReport,
-          child: _loading
-              ? const CircularProgressIndicator(
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                )
-              : const Text('Создать отчет'),
+          child:
+              _loading
+                  ? const CircularProgressIndicator(
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  )
+                  : const Text(
+                    'Создать отчет',
+                    style: TextStyle(color: Colors.blue),
+                  ),
         ),
       ),
     );

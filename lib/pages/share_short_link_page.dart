@@ -122,8 +122,11 @@ class _ShareShortLinkPageState extends State<ShareShortLinkPage> {
                       const SnackBar(content: Text('Ссылка скопирована')),
                     );
                   },
-                  icon: const Icon(Icons.copy),
-                  label: const Text("Скопировать ссылку"),
+                  icon: const Icon(Icons.copy, color: Colors.blue),
+                  label: const Text(
+                    "Скопировать ссылку",
+                    style: TextStyle(color: Colors.blue),
+                  ),
                 ),
               ],
             ),

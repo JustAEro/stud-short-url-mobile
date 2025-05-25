@@ -1,5 +1,8 @@
+import 'dart:ui' as ui;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:stud_short_url_mobile/pages/reports_page.dart';
 import 'package:stud_short_url_mobile/services/auth_service.dart';
 
@@ -61,6 +64,24 @@ class _MyAppState extends State<MyApp> {
             '/signup': (context) => const RegisterPage(),
             '/reports': (context) => const ReportsPage(),
           },
+          
+          locale: ui.PlatformDispatcher.instance.locale,
+          localeResolutionCallback: (locale, supportedLocales) {
+            if (locale != null) {
+              for (var supportedLocale in supportedLocales) {
+                if (supportedLocale.languageCode == locale.languageCode) {
+                  return supportedLocale;
+                }
+              }
+            }
+            return supportedLocales.first;
+          },
+          supportedLocales: const [Locale('en'), Locale('ru')],
+          localizationsDelegates: [
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
         );
       },
     );

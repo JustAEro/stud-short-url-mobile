@@ -115,16 +115,6 @@ class _MainPageState extends State<MainPage> {
 
         child: Column(
           children: [
-            ElevatedButton(
-              onPressed: () {
-                Navigator.pushNamed(context, '/create');
-              },
-              child: const Text(
-                'Создать короткую ссылку',
-                style: TextStyle(color: Colors.blue),
-              ),
-            ),
-            const SizedBox(height: 16),
             TextField(
               decoration: const InputDecoration(
                 labelText: "Поиск (введите часть описания или ключа)",
@@ -361,6 +351,13 @@ class _MainPageState extends State<MainPage> {
             ),
           ],
         ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        backgroundColor: const Color.fromARGB(110, 33, 149, 243),
+        onPressed: () {
+          Navigator.pushNamed(context, '/create');
+        },
+        child: const Icon(Icons.add, color: Colors.black87),
       ),
     );
   }
