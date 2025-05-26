@@ -22,7 +22,7 @@ class StatisticsPage extends StatefulWidget {
 class _StatisticsPageState extends State<StatisticsPage> {
   List<FlSpot> _chartData = [];
   List<String> _labels = [];
-  String _timeScale = 'hour';
+  String _timeScale = 'day';
   String _chartType = 'line';
   bool _isLoading = true;
   Map<String, int> _deviceStats = {};

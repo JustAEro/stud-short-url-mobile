@@ -90,10 +90,12 @@ class _EditReportPageState extends State<EditReportPage> {
       );
 
       if (!mounted) return;
+
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('Отчет успешно обновлен')));
-      Navigator.pop(context);
+
+      await _loadReportData();
     } catch (e) {
       print('Ошибка при обновлении отчета: $e');
       ScaffoldMessenger.of(context).showSnackBar(
@@ -132,7 +134,7 @@ class _EditReportPageState extends State<EditReportPage> {
       final dio = DioClient().dio;
       await dio.delete('/api/v1/reports/${widget.reportId}');
       if (!mounted) return;
-      Navigator.pop(context); // выйти после удаления
+      Navigator.pop(context, true); // выйти после удаления
     } catch (e) {
       print('Ошибка при удалении отчета: $e');
       if (!mounted) return;

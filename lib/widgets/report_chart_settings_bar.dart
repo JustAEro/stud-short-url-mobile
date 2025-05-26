@@ -137,59 +137,123 @@ class _ReportChartSettingsBarState extends State<ReportChartSettingsBar> {
   @override
   Widget build(BuildContext context) {
     final isEditable = widget.isEditable;
-    final dateFormat = DateFormat('yyyy-MM-dd HH:mm');
+    final dateFormat = DateFormat('dd-MM-yyyy HH:mm');
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Wrap(
-          spacing: 16,
-          runSpacing: 16,
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            DropdownButton<ChartGranularity>(
-              value: _granularity,
-              onChanged:
-                  isEditable
-                      ? (val) => setState(() => _granularity = val!)
-                      : null,
-              items:
-                  ChartGranularity.values.map((g) {
-                    return DropdownMenuItem(value: g, child: Text(g.label));
-                  }).toList(),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              spacing: 10.0,
+              children: [
+                Text(
+                  "Гранулярность:",
+                  style: TextStyle(
+                    fontWeight: FontWeight.normal,
+                    fontSize: 16, // Указываем размер шрифта
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: DropdownButton<ChartGranularity>(
+                    value: _granularity,
+                    onChanged:
+                        isEditable
+                            ? (val) => setState(() => _granularity = val!)
+                            : null,
+                    items:
+                        ChartGranularity.values.map((g) {
+                          return DropdownMenuItem(
+                            value: g,
+                            child: Text(g.label),
+                          );
+                        }).toList(),
+                  ),
+                ),
+              ],
             ),
-            DropdownButton<ChartType>(
-              value: _chartType,
-              onChanged:
-                  isEditable
-                      ? (val) => setState(() => _chartType = val!)
-                      : null,
-              items:
-                  ChartType.values.map((t) {
-                    return DropdownMenuItem(value: t, child: Text(t.label));
-                  }).toList(),
+
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              spacing: 10.0,
+              children: [
+                Text(
+                  "Тип графика:",
+                  style: TextStyle(
+                    fontWeight: FontWeight.normal,
+                    fontSize: 16, // Указываем размер шрифта
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: DropdownButton<ChartType>(
+                    value: _chartType,
+                    onChanged:
+                        isEditable
+                            ? (val) => setState(() => _chartType = val!)
+                            : null,
+                    items:
+                        ChartType.values.map((t) {
+                          return DropdownMenuItem(
+                            value: t,
+                            child: Text(t.label),
+                          );
+                        }).toList(),
+                  ),
+                ),
+              ],
             ),
-            DropdownButton<ChartPeriod>(
-              value: _period,
-              onChanged:
-                  isEditable
-                      ? (val) async {
-                        if (val == ChartPeriod.custom) {
-                          await _selectCustomDates();
-                        }
-                        setState(() => _period = val!);
-                      }
-                      : null,
-              items:
-                  ChartPeriod.values.map((p) {
-                    return DropdownMenuItem(value: p, child: Text(p.label));
-                  }).toList(),
+
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              spacing: 10.0,
+              children: [
+                Text(
+                  "Период:",
+                  style: TextStyle(
+                    fontWeight: FontWeight.normal,
+                    fontSize: 16, // Указываем размер шрифта
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: DropdownButton<ChartPeriod>(
+                    value: _period,
+                    onChanged:
+                        isEditable
+                            ? (val) async {
+                              if (val == ChartPeriod.custom) {
+                                await _selectCustomDates();
+                              }
+                              setState(() => _period = val!);
+                            }
+                            : null,
+                    items:
+                        ChartPeriod.values.map((p) {
+                          return DropdownMenuItem(
+                            value: p,
+                            child: Text(p.label),
+                          );
+                        }).toList(),
+                  ),
+                ),
+              ],
             ),
+
             if (_period == ChartPeriod.custom &&
                 _startDate != null &&
                 _endDate != null)
-              Text(
-                '${dateFormat.format(_startDate!)} — ${dateFormat.format(_endDate!)}',
-                style: const TextStyle(fontStyle: FontStyle.italic),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    '${dateFormat.format(_startDate!)} — ${dateFormat.format(_endDate!)}',
+                    style: const TextStyle(fontStyle: FontStyle.italic),
+                  ),
+                ],
               ),
           ],
         ),
@@ -197,12 +261,21 @@ class _ReportChartSettingsBarState extends State<ReportChartSettingsBar> {
           Padding(
             padding: const EdgeInsets.only(top: 12.0),
             child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                TextButton(
+                ElevatedButton(
                   onPressed: _resetToInitial,
-                  child: const Text("Отменить"),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color.fromARGB(241, 244, 67, 54),
+                  ),
+                  child: const Text(
+                    "Отмена",
+                    style: TextStyle(color: Color.fromARGB(240, 255, 255, 255)),
+                  ),
                 ),
-                const SizedBox(width: 16),
+
+                const SizedBox(width: 32),
+
                 ElevatedButton(
                   onPressed: () {
                     widget.onSave(
@@ -214,7 +287,10 @@ class _ReportChartSettingsBarState extends State<ReportChartSettingsBar> {
                       endDate: _period == ChartPeriod.custom ? _endDate : null,
                     );
                   },
-                  child: const Text("Сохранить"),
+                  child: const Text(
+                    "Сохранить",
+                    style: TextStyle(color: Colors.blue),
+                  ),
                 ),
               ],
             ),

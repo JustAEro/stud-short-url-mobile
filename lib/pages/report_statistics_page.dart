@@ -59,11 +59,12 @@ class _ReportStatisticsPageState extends State<ReportStatisticsPage> {
       final response = await _dio.get(
         '/api/v1/reports/${widget.reportId}/stats?timezoneOffsetInMinutes=-0',
       );
+      print(response.data);
       if (response.statusCode == 200) {
         setState(() {
           _reportStats = FullReportDto.fromJson(response.data);
 
-          print(_reportStats!.linksStats[0].labels.last); 
+          //print(_reportStats!.linksStats[0].labels.last);
 
           _granularity = _reportStats!.timeScale;
           _chartTypeEnum = _reportStats!.chartType;
@@ -117,11 +118,7 @@ class _ReportStatisticsPageState extends State<ReportStatisticsPage> {
 
       await dio.put('/api/v1/reports/${widget.reportId}', data: data);
 
-      if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Отчет успешно обновлен')));
-      Navigator.pop(context);
+      await _fetchReportStats();
     } catch (e) {
       print('Ошибка при обновлении отчета: $e');
       ScaffoldMessenger.of(context).showSnackBar(
@@ -158,7 +155,14 @@ class _ReportStatisticsPageState extends State<ReportStatisticsPage> {
         final stat = _reportStats!.linksStats[j];
         if (i < stat.values.length) {
           final value = stat.values[i].toDouble();
-          barRods.add(BarChartRodData(toY: value, color: colors[j], width: 12));
+          barRods.add(
+            BarChartRodData(
+              toY: value,
+              color: colors[j],
+              width: 12,
+              borderRadius: BorderRadius.circular(0),
+            ),
+          );
         }
       }
 
@@ -522,7 +526,8 @@ class _ReportStatisticsPageState extends State<ReportStatisticsPage> {
                         ),
                       ),
                       const SizedBox(height: 16),
-                      _buildCombinedChart(),
+                      if (_reportStats!.aggregate.total > 0)
+                        _buildCombinedChart(),
                       const SizedBox(height: 24),
                       buildStatsSection(
                         'Устройства',

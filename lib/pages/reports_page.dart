@@ -66,13 +66,18 @@ class _ReportsPageState extends State<ReportsPage> {
     }
   }
 
-  void openReportDetail(Map<String, dynamic> report) {
-    Navigator.push(
+  void openReportDetail(Map<String, dynamic> report) async {
+    final result = await Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => ReportPage(reportId: report['id']),
       ),
     );
+
+    if (result == true) {
+      // Если вернулись с обновлением отчета, перезагрузить список
+      loadReports();
+    }
   }
 
   @override

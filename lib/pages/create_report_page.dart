@@ -3,6 +3,8 @@ import 'package:stud_short_url_mobile/clients/dio_client.dart';
 import 'package:stud_short_url_mobile/widgets/authenticated_app_bar.dart';
 import 'package:stud_short_url_mobile/widgets/link_selector.dart';
 
+import 'report_page.dart';
+
 class CreateReportPage extends StatefulWidget {
   const CreateReportPage({super.key});
 
@@ -55,9 +57,15 @@ class _CreateReportPageState extends State<CreateReportPage> {
 
       // Навигация на страницу отчета (если она есть)
       // Navigator.pushNamed(context, '/reports/$reportId');
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => ReportPage(reportId: response.data['id']),
+        ),
+      );
 
       // Или вернуться назад:
-      Navigator.pop(context);
+      // Navigator.pop(context, true);
     } catch (e) {
       print('Ошибка при создании отчета: $e');
       ScaffoldMessenger.of(context).showSnackBar(

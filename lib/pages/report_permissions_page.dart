@@ -6,7 +6,11 @@ class ReportPermissionsPage extends StatefulWidget {
   final String reportId;
   final bool canManagePermissions;
 
-  const ReportPermissionsPage({super.key, required this.reportId, required this.canManagePermissions});
+  const ReportPermissionsPage({
+    super.key,
+    required this.reportId,
+    required this.canManagePermissions,
+  });
 
   @override
   State<ReportPermissionsPage> createState() => _ReportPermissionsPageState();
@@ -157,7 +161,7 @@ class _ReportPermissionsPageState extends State<ReportPermissionsPage> {
     }
   }
 
- @override
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: const AuthenticatedAppBar(title: "Права доступа"),
@@ -293,7 +297,12 @@ class _ReportPermissionsPageState extends State<ReportPermissionsPage> {
                                             );
                                             Navigator.pop(context);
                                           },
-                                          child: const Text('Добавить'),
+                                          child: const Text(
+                                            'Добавить',
+                                            style: TextStyle(
+                                              color: Colors.blue,
+                                            ),
+                                          ),
                                         ),
                                       ],
                                     ),
@@ -313,5 +322,4 @@ class _ReportPermissionsPageState extends State<ReportPermissionsPage> {
               ),
     );
   }
-
 }
