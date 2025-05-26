@@ -210,6 +210,8 @@ class _ReportStatisticsPageState extends State<ReportStatisticsPage> {
                           lineTouchData: LineTouchData(
                             enabled: true,
                             touchTooltipData: LineTouchTooltipData(
+                              fitInsideHorizontally: true,
+                              fitInsideVertically: true,
                               getTooltipColor: (_) => Colors.black87,
                               getTooltipItems: (touchedSpots) {
                                 return touchedSpots.map((spot) {
@@ -234,6 +236,8 @@ class _ReportStatisticsPageState extends State<ReportStatisticsPage> {
                           barTouchData: BarTouchData(
                             enabled: true,
                             touchTooltipData: BarTouchTooltipData(
+                              fitInsideHorizontally: true,
+                              fitInsideVertically: true,
                               getTooltipColor: (_) => Colors.black87,
                               tooltipPadding: const EdgeInsets.all(8),
                               tooltipRoundedRadius: 4,
