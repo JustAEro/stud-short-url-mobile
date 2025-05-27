@@ -162,7 +162,7 @@ class _EditPageState extends State<EditPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AuthenticatedAppBar(
-        title: canEdit ? "Редактирование" : "Просмотр",
+        title: canEdit ? "Редактирование" : "Информация",
       ),
       body:
           _isLoading

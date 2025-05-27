@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:stud_short_url_mobile/clients/dio_client.dart';
 import 'package:stud_short_url_mobile/report-access-roles/report_access_roles.dart';
+import 'package:stud_short_url_mobile/widgets/authenticated_app_bar.dart';
+import 'report_meta_info_page.dart';
 import 'report_statistics_page.dart';
 import 'edit_report_page.dart';
 import 'report_permissions_page.dart';
@@ -8,10 +10,7 @@ import 'report_permissions_page.dart';
 class ReportPage extends StatefulWidget {
   final String reportId;
 
-  const ReportPage({
-    super.key,
-    required this.reportId,
-  });
+  const ReportPage({super.key, required this.reportId});
 
   @override
   State<ReportPage> createState() => _ReportPageState();
@@ -45,9 +44,9 @@ class _ReportPageState extends State<ReportPage> {
       } else {
         if (!mounted) return;
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Ошибка загрузки отчета')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Ошибка загрузки отчета')));
       }
     } catch (e) {
       if (!mounted) return;
@@ -75,19 +74,32 @@ class _ReportPageState extends State<ReportPage> {
     }
 
     final role = parseReportRole(reportData?['role']);
-    final bool canEdit = role == ReportAccessRole.editor || role == ReportAccessRole.admin;
+    final bool canEdit =
+        role == ReportAccessRole.editor || role == ReportAccessRole.admin;
     final bool canManagePermissions = role == ReportAccessRole.admin;
 
     return Scaffold(
-      body: [
-        ReportStatisticsPage(reportId: widget.reportId),
-        EditReportPage(reportId: widget.reportId),
-        if (canManagePermissions)
-          ReportPermissionsPage(
-            canManagePermissions: canManagePermissions,
-            reportId: widget.reportId,
-          ),
-      ][_selectedIndex],
+      body:
+          [
+            ReportStatisticsPage(reportId: widget.reportId),
+            EditReportPage(reportId: widget.reportId),
+            if (canManagePermissions)
+              ReportPermissionsPage(
+                canManagePermissions: canManagePermissions,
+                reportId: widget.reportId,
+              ),
+            ReportMetaInfoPage(
+              createdBy: reportData!['creatorUser']['login'],
+              accessMode:
+                  role == ReportAccessRole.admin
+                      ? 'Администрирование'
+                      : role == ReportAccessRole.editor
+                      ? 'Редактирование'
+                      : 'Просмотр',
+              createdAt: DateTime.parse(reportData!['createdAt']).toLocal(),
+              updatedAt: DateTime.parse(reportData!['updatedAt']).toLocal(),
+            ),
+          ][_selectedIndex],
       bottomNavigationBar: NavigationBar(
         selectedIndex: _selectedIndex,
         onDestinationSelected: (int index) {
@@ -108,14 +120,18 @@ class _ReportPageState extends State<ReportPage> {
             )
           else
             const NavigationDestination(
-              icon: Icon(Icons.info),
-              label: 'Информация',
+              icon: Icon(Icons.remove_red_eye),
+              label: 'Просмотр',
             ),
           if (canManagePermissions)
             const NavigationDestination(
               icon: Icon(Icons.lock),
               label: 'Доступ',
             ),
+          const NavigationDestination(
+            icon: Icon(Icons.info_outline),
+            label: 'Информация',
+          ),
         ],
       ),
     );
