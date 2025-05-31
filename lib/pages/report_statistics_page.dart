@@ -55,9 +55,9 @@ class _ReportStatisticsPageState extends State<ReportStatisticsPage> {
 
     try {
       print(DateTime.now().timeZoneOffset.inMinutes);
-      //final offset = DateTime.now().timeZoneOffset.inMinutes;
+      final offset = DateTime.now().timeZoneOffset.inMinutes;
       final response = await _dio.get(
-        '/api/v1/reports/${widget.reportId}/stats?timezoneOffsetInMinutes=-0',
+        '/api/v1/reports/${widget.reportId}/stats?timezoneOffsetInMinutes=${-offset}',
       );
       print(response.data);
       if (response.statusCode == 200) {
@@ -364,9 +364,10 @@ class _ReportStatisticsPageState extends State<ReportStatisticsPage> {
 
   Future<void> _exportReport(String format) async {
     try {
+      final offset = DateTime.now().timeZoneOffset.inMinutes;
       final response = await _dio.get<List<int>>(
         '/api/v1/reports/${widget.reportId}/export',
-        queryParameters: {'format': format, 'timezoneOffsetInMinutes': 0},
+        queryParameters: {'format': format, 'timezoneOffsetInMinutes': -offset},
         options: Options(responseType: ResponseType.bytes),
       );
 

@@ -54,8 +54,9 @@ class _StatisticsPageState extends State<StatisticsPage> {
     });
 
     try {
+      final offset = DateTime.now().timeZoneOffset.inMinutes;
       final response = await _dio.get(
-        '/api/v1/link-stat/${widget.shortKey}/stats?timeScale=$_timeScale',
+        '/api/v1/link-stat/${widget.shortKey}/stats?timeScale=$_timeScale&timezoneOffsetInMinutes=-$offset',
       );
 
       if (response.statusCode == 200) {
