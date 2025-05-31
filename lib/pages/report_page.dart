@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:stud_short_url_mobile/clients/dio_client.dart';
 import 'package:stud_short_url_mobile/report-access-roles/report_access_roles.dart';
-import 'package:stud_short_url_mobile/widgets/authenticated_app_bar.dart';
 import 'report_meta_info_page.dart';
 import 'report_statistics_page.dart';
 import 'edit_report_page.dart';
