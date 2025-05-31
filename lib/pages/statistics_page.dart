@@ -96,7 +96,7 @@ class _StatisticsPageState extends State<StatisticsPage> {
           };
           _referrerStats = {
             for (var item in stats['byReferrer'])
-              item['referrer'] ?? 'Unknown': item['_count']['_all'],
+              item['referrer'] ?? 'Неизвестно': item['_count']['_all'],
           };
         });
       }
@@ -428,11 +428,30 @@ class _StatisticsPageState extends State<StatisticsPage> {
 
                         const SizedBox(height: 24),
 
-                        Text(
-                          'Всего переходов: $_totalClicks',
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
+                        Card(
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          elevation: 2,
+                          margin: const EdgeInsets.symmetric(vertical: 4),
+                          child: ListTile(
+                            leading: const Icon(
+                              Icons.bar_chart,
+                              color: Colors.blue,
+                            ),
+                            title: Text(
+                              'Всего переходов',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            trailing: Text(
+                              '$_totalClicks',
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                           ),
                         ),
 

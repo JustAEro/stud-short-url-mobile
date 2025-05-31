@@ -77,11 +77,11 @@ class _CreateShortLinkPageState extends State<CreateShortLinkPage> {
     }
   }
 
-  void _resetForm() {
-    _formKey.currentState?.reset();
-    _longUrlController.clear();
-    _descriptionController.clear();
-  }
+  // void _resetForm() {
+  //   _formKey.currentState?.reset();
+  //   _longUrlController.clear();
+  //   _descriptionController.clear();
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -131,13 +131,6 @@ class _CreateShortLinkPageState extends State<CreateShortLinkPage> {
                 ),
               ),
               const SizedBox(height: 16),
-              TextButton(
-                onPressed: _resetForm,
-                child: const Text(
-                  'Сброс',
-                  style: TextStyle(color: Colors.blue),
-                ),
-              ),
             ],
           ),
         ),

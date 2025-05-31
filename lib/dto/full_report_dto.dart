@@ -52,7 +52,7 @@ class ReferrerStat {
 
   factory ReferrerStat.fromJson(Map<String, dynamic> json) {
     return ReferrerStat(
-      referrer: json['referrer'] ?? 'Unknown',
+      referrer: json['referrer'] ?? 'Неизвестно',
       count: json['_count']['_all'],
     );
   }

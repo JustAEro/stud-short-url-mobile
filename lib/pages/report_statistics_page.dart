@@ -521,18 +521,37 @@ class _ReportStatisticsPageState extends State<ReportStatisticsPage> {
                           },
                         ),
 
-                      const SizedBox(height: 16),
-                      Text(
-                        "Общее количество переходов: ${_reportStats!.aggregate.total}",
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 16),
                       if (_reportStats!.aggregate.total > 0)
                         _buildCombinedChart(),
                       const SizedBox(height: 24),
+
+                      Card(
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        elevation: 2,
+                        margin: const EdgeInsets.symmetric(vertical: 4),
+                        child: ListTile(
+                          leading: const Icon(
+                            Icons.bar_chart,
+                            color: Colors.blue,
+                          ),
+                          title: Text(
+                            'Всего переходов',
+                            style: const TextStyle(fontWeight: FontWeight.w500),
+                          ),
+                          trailing: Text(
+                            _reportStats!.aggregate.total.toString(),
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(height: 16),
+
                       buildStatsSection(
                         'Устройства',
                         Map.fromEntries(
