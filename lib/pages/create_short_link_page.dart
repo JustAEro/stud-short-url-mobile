@@ -119,7 +119,7 @@ class _CreateShortLinkPageState extends State<CreateShortLinkPage> {
               TextFormField(
                 controller: _descriptionController,
                 decoration: const InputDecoration(
-                  labelText: 'Описание (необязательно)',
+                  labelText: 'Описание (Опционально)',
                 ),
               ),
               const SizedBox(height: 24),

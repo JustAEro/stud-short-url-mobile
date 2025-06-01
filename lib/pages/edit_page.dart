@@ -245,7 +245,7 @@ class _EditPageState extends State<EditPage> {
                           ElevatedButton(
                             onPressed: _updateLink,
                             child: const Text(
-                              "Обновить",
+                              "Изменить",
                               style: TextStyle(color: Colors.blue),
                             ),
                           ),
