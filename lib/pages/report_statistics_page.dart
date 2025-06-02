@@ -57,7 +57,7 @@ class _ReportStatisticsPageState extends State<ReportStatisticsPage> {
       print(DateTime.now().timeZoneOffset.inMinutes);
       final offset = DateTime.now().timeZoneOffset.inMinutes;
       final response = await _dio.get(
-        '/api/v1/reports/${widget.reportId}/stats?timezoneOffsetInMinutes=${-offset}',
+        '/api/v1/reports/${widget.reportId}/stats?timezoneOffsetInMinutes=${0}',
       );
       print(response.data);
       if (response.statusCode == 200) {
