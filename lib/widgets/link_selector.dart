@@ -7,11 +7,8 @@ import 'package:stud_short_url_mobile/dto/short_link.dto.dart';
 
 class LinkSelector extends StatefulWidget {
   final void Function(List<String>) onSelectionChanged;
-
   final List<String> initialSelectedIds;
-
   final List<ShortLinkDto> initialSelectedLinks;
-
   final bool canEdit;
 
   const LinkSelector({
@@ -28,7 +25,6 @@ class LinkSelector extends StatefulWidget {
 
 class _LinkSelectorState extends State<LinkSelector> {
   final ScrollController _scrollController = ScrollController();
-
   List<LinkItem> shortLinks = [];
   late Set<String> selectedIds;
   late List<LinkItem> initialLinks;
@@ -87,7 +83,6 @@ class _LinkSelectorState extends State<LinkSelector> {
 
     try {
       final dio = DioClient().dio;
-
       final response = await dio.get(
         '/api/v1/short-links',
         queryParameters: {
@@ -100,7 +95,6 @@ class _LinkSelectorState extends State<LinkSelector> {
       );
 
       final paginated = PaginatedLinks.fromJson(response.data);
-
       setState(() {
         if (reset) {
           shortLinks = paginated.items;
@@ -188,53 +182,58 @@ class _LinkSelectorState extends State<LinkSelector> {
           ],
         ),
         const SizedBox(height: 8),
-        Expanded(
-          child:
-              loading && shortLinks.isEmpty
-                  ? const Center(child: CircularProgressIndicator())
-                  : Scrollbar(
-                    controller: _scrollController,
-                    thumbVisibility: true,
-                    child: ListView.builder(
-                      controller: _scrollController,
-                      itemCount: allLinks.length,
-                      itemBuilder: (context, index) {
-                        final link = allLinks[index];
-
-                        final shortUrl =
-                          '${dotenv.env['SHORT_LINKS_WEB_APP_URL']}/${link.shortKey}';
-                          
-                        final displayText =
-                            link.description.isNotEmpty
-                                ? link.description
-                                : link.shortKey;
-
-                        return Card(
-                          margin: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 4,
-                          ),
-                          child: CheckboxListTile(
-                            enabled: widget.canEdit,
-                            activeColor: const Color.fromARGB(215, 33, 149, 243),
-                            title: Text(displayText),
-                            subtitle: Text(shortUrl),
-                            value: selectedIds.contains(link.id),
-                            onChanged:
-                                (selected) =>
-                                    onSelectChanged(selected, link.id),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-        ),
-        if (loading && shortLinks.isNotEmpty)
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 8),
-            child: CircularProgressIndicator(),
-          ),
+        Expanded(child: _buildListContent(allLinks)),
       ],
+    );
+  }
+
+  Widget _buildListContent(List<LinkItem> allLinks) {
+    if (loading && shortLinks.isEmpty) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    return Scrollbar(
+      controller: _scrollController,
+      thumbVisibility: true,
+      child: ListView.builder(
+        controller: _scrollController,
+        physics: const AlwaysScrollableScrollPhysics(),
+        itemCount: allLinks.length + (hasMore ? 1 : 0),
+        itemBuilder: (context, index) {
+          if (index >= allLinks.length) {
+            return _buildLoadingIndicator();
+          }
+
+          final link = allLinks[index];
+          return _buildLinkItem(link);
+        },
+      ),
+    );
+  }
+
+  Widget _buildLoadingIndicator() {
+    return const Padding(
+      padding: EdgeInsets.symmetric(vertical: 16),
+      child: Center(child: CircularProgressIndicator()),
+    );
+  }
+
+  Widget _buildLinkItem(LinkItem link) {
+    final shortUrl =
+        '${dotenv.env['SHORT_LINKS_WEB_APP_URL']}/${link.shortKey}';
+    final displayText =
+        link.description.isNotEmpty ? link.description : link.shortKey;
+
+    return Card(
+      margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      child: CheckboxListTile(
+        enabled: widget.canEdit,
+        activeColor: const Color.fromARGB(215, 33, 149, 243),
+        title: Text(displayText),
+        subtitle: Text(shortUrl),
+        value: selectedIds.contains(link.id),
+        onChanged: (selected) => onSelectChanged(selected, link.id),
+      ),
     );
   }
 }
